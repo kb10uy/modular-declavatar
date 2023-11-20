@@ -7,6 +7,7 @@ using nadena.dev.ndmf;
 using AnimatorAsCode.V1.NDMFProcessor;
 using KusakaFactory.Declavatar;
 using KusakaFactory.Declavatar.Runtime;
+using KusakaFactory.Declavatar.Editor;
 
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfGenerator))]
 [assembly: ExportsPlugin(typeof(DeclavatarComponentRemover))]
@@ -26,9 +27,9 @@ namespace KusakaFactory.Declavatar
                 declavatarPlugin.Reset();
                 if (!declavatarPlugin.Compile(my.Definition.text))
                 {
-                    var errors = declavatarPlugin.FetchErrors();
-                    var errorMessage = $"Declavatar definition error:\n{string.Join("\n", errors.Select((e) => e.Item2))}";
-                    throw new DeclavatarDeclarationException(errorMessage);
+                    var errorWindow = BuildLogWindow.ShowLogWindow();
+                    errorWindow.SetLog(declavatarPlugin.FetchErrors());
+                    return AacPluginOutput.Regular();
                 }
 
                 definitionJson = declavatarPlugin.GetAvatarJson();

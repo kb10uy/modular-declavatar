@@ -4,7 +4,6 @@ using System.Linq;
 using nadena.dev.modular_avatar.core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using VRC.SDK3.Avatars.ScriptableObjects;
 
 namespace KusakaFactory.Declavatar
 {

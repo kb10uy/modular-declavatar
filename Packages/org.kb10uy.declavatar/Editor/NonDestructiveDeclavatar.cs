@@ -1,10 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -14,6 +9,7 @@ using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.ModularAvatar;
 using AnimatorAsCode.V1.VRC;
 using nadena.dev.modular_avatar.core;
+using KusakaFactory.Declavatar.Runtime;
 
 namespace KusakaFactory.Declavatar
 {
@@ -338,7 +334,6 @@ namespace KusakaFactory.Declavatar
         {
             var layer = controller.NewLayer(name);
 
-            /*
             // Create states
             var states = new List<AacFlState>();
             foreach (var agState in agLayer.States)
@@ -348,7 +343,7 @@ namespace KusakaFactory.Declavatar
                 switch (agState.Animation)
                 {
                     case LayerAnimation.Clip clip:
-                        state.WithAnimation(_externals.AnimationClips[clip.AssetKey]);
+                        state.WithAnimation(SearchExternalAnimationClip(clip.AssetKey));
                         if (agState.Time != null)
                         {
                             var speedParameter = layer.FloatParameter(agState.Time);
@@ -365,7 +360,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameter = blendTree.Parameters[0];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = _externals.AnimationClips[field.AssetKey];
+                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
                                     tree.AddChild(fieldAnimation, field.Position[0]);
                                 }
                                 break;
@@ -375,7 +370,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = _externals.AnimationClips[field.AssetKey];
+                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
                                     tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
@@ -385,7 +380,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = _externals.AnimationClips[field.AssetKey];
+                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
                                     tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
@@ -395,12 +390,12 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = _externals.AnimationClips[field.AssetKey];
+                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
                                     tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
                             default:
-                                throw new DeclavatarException($"Invalid BlendTree Type {blendTree.BlendType}");
+                                throw new DeclavatarInternalException($"Invalid BlendTree Type {blendTree.BlendType}");
                         }
                         state.WithAnimation(tree);
                         break;
@@ -445,12 +440,11 @@ namespace KusakaFactory.Declavatar
                                 conds.And(layer.FloatParameter(leFloat.Parameter).IsLessThan(leFloat.Value));
                                 break;
                             default:
-                                throw new DeclavatarException("Invalid LayerCondition deserialization object");
+                                throw new DeclavatarInternalException("Invalid LayerCondition deserialization object");
                         }
                     }
                 }
             }
-            */
         }
 
         #endregion

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace KusakaFactory.Declavatar
+namespace KusakaFactory.Declavatar.Runtime
 {
     [CreateAssetMenu(fileName = "DeclavatarExternalAsset", menuName = "Declavatar/External Asset")]
     public class ExternalAsset : ScriptableObject

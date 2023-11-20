@@ -1,7 +1,15 @@
 {
-    "name": "KusakaFactory.Declavatar.Editor",
+    "name": "org.kb10uy.declavatar",
     "references": [
-        "KusakaFactory.Declavatar.Core"
+        "nadena.dev.ndmf",
+        "nadena.dev.ndmf.runtime",
+        "nadena.dev.modular-avatar.core",
+        "nadena.dev.modular-avatar.core.editor",
+        "AnimatorAsCode.V1",
+        "AnimatorAsCode.V1.VRChat",
+        "AnimatorAsCode.V1.ModularAvatar",
+        "AnimatorAsCode.V1.NDMFProcessor",
+        "org.kb10uy.declavatar.runtime"
     ],
     "includePlatforms": [
         "Editor"

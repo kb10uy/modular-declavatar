@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
+using KusakaFactory.Declavatar.Runtime;
 
 namespace KusakaFactory.Declavatar.Editor
 {

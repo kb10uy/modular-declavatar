@@ -10,6 +10,15 @@
     "email": "kb10uy@kb10uy.org",
     "url": "https://kb10uy.org"
   },
+  "vpmDependencies": {
+    "nadena.dev.ndmf": ">=1.2.5",
+    "nadena.dev.modular-avatar": ">=1.8.3",
+    "com.unity.nuget.newtonsoft-json": ">=2.0.0",
+    "dev.hai-vr.animator-as-code.v1": ">=1.0.9920",
+    "dev.hai-vr.animator-as-code.v1.vrchat": ">=1.0.9920",
+    "dev.hai-vr.animator-as-code.v1.ndmf-processor": ">=1.0.9920",
+    "dev.hai-vr.animator-as-code.v1.modular-avatar": ">=1.0.9920"
+  },
   "dependencies": {
     "nadena.dev.ndmf": "1.2.5",
     "nadena.dev.modular-avatar": "1.8.3",

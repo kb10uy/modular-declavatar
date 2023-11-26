@@ -48,7 +48,13 @@ namespace KusakaFactory.Declavatar
             var externalAssets = my.ExternalAssets.Where((ea) => ea != null).ToList();
             Debug.Log($"Declavatar: definition '{definition.Name}' compiled");
 
-            var declavatar = new NonDestructiveDeclavatar(my.gameObject, aac, definition, externalAssets);
+            var declavatar = new NonDestructiveDeclavatar(
+                my.gameObject,
+                my.InstallTarget,
+                aac,
+                definition,
+                externalAssets
+            );
             declavatar.Execute();
             return AacPluginOutput.Regular();
         }

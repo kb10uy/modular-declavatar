@@ -16,6 +16,7 @@ namespace KusakaFactory.Declavatar
     public sealed class NonDestructiveDeclavatar
     {
         private GameObject _rootGameObject;
+        private GameObject _installTarget;
         private Avatar _declavatarDefinition;
         private IReadOnlyList<ExternalAsset> _externalAssets;
         private AacFlBase _ndmfAac;
@@ -23,9 +24,10 @@ namespace KusakaFactory.Declavatar
 
         private GameObjectSearcher _searcher;
 
-        public NonDestructiveDeclavatar(GameObject root, AacFlBase aac, Avatar definition, IReadOnlyList<ExternalAsset> assets)
+        public NonDestructiveDeclavatar(GameObject root, GameObject installTarget, AacFlBase aac, Avatar definition, IReadOnlyList<ExternalAsset> assets)
         {
             _rootGameObject = root;
+            _installTarget = installTarget;
             _declavatarDefinition = definition;
             _externalAssets = assets;
             _ndmfAac = aac;
@@ -478,8 +480,18 @@ namespace KusakaFactory.Declavatar
         private void GenerateMenuNonDestructive()
         {
             var rootMenuItem = new GameObject("DeclavatarMenuRoot");
-            rootMenuItem.AddComponent<ModularAvatarMenuInstaller>();
-            rootMenuItem.AddComponent<ModularAvatarMenuGroup>();
+            // var installer = 
+            if (_installTarget != null)
+            {
+                _installTarget.AddComponent<ModularAvatarMenuInstaller>();
+                var targetingGroup = _installTarget.AddComponent<ModularAvatarMenuGroup>();
+                targetingGroup.targetObject = rootMenuItem;
+            }
+            else
+            {
+                rootMenuItem.AddComponent<ModularAvatarMenuInstaller>();
+                rootMenuItem.AddComponent<ModularAvatarMenuGroup>();
+            }
 
             foreach (var item in _declavatarDefinition.TopMenuGroup.Items)
             {

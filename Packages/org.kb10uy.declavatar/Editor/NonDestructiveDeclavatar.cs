@@ -21,7 +21,7 @@ namespace KusakaFactory.Declavatar
         private Avatar _declavatarDefinition;
         private IReadOnlyList<ExternalAsset> _externalAssets;
         private AacFlBase _ndmfAac;
-        private MaAc _maAc;
+        // private MaAc _maAc;
         private BuildLogWindow _logWindow;
 
         private GameObjectSearcher _searcher;
@@ -33,7 +33,7 @@ namespace KusakaFactory.Declavatar
             _declavatarDefinition = definition;
             _externalAssets = assets;
             _ndmfAac = aac;
-            _maAc = MaAc.Create(root);
+            // _maAc = MaAc.Create(root);
             _logWindow = null;
 
             _searcher = new GameObjectSearcher(root);
@@ -79,7 +79,12 @@ namespace KusakaFactory.Declavatar
                 }
             }
 
-            _maAc.NewMergeAnimator(fxAnimator, VRCAvatarDescriptor.AnimLayerType.FX);
+            // _maAc.NewMergeAnimator(fxAnimator, VRCAvatarDescriptor.AnimLayerType.FX).Relative();
+            // MEMO: should be absolute path mode?
+            var mergeAnimator = _rootGameObject.AddComponent<ModularAvatarMergeAnimator>();
+            mergeAnimator.animator = fxAnimator.AnimatorController;
+            mergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
+            mergeAnimator.pathMode = MergeAnimatorPathMode.Relative;
         }
 
         #region FX Layer Generation

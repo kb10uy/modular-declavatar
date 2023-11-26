@@ -49,6 +49,9 @@ namespace KusakaFactory.Declavatar
         SyntaxError = 1,
         SemanticError = 2,
         SemanticInfo = 3,
+
+        // Runtime use only
+        RuntimeError = 1048576,
     }
 
     internal sealed class NativeHandle : SafeHandle

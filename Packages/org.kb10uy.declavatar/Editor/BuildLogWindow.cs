@@ -73,6 +73,7 @@ namespace KusakaFactory.Declavatar.Editor
                         case ErrorKind.CompilerError:
                         case ErrorKind.SyntaxError:
                         case ErrorKind.SemanticError:
+                        case ErrorKind.RuntimeError:
                             icon = EditorGUIUtility.IconContent("console.erroricon");
                             break;
                         case ErrorKind.SemanticInfo:

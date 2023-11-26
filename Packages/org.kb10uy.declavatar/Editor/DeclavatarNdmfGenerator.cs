@@ -49,7 +49,7 @@ namespace KusakaFactory.Declavatar
             Debug.Log($"Declavatar: definition '{definition.Name}' compiled");
 
             var declavatar = new NonDestructiveDeclavatar(
-                my.gameObject,
+                my.DeclarationRoot != null ? my.DeclarationRoot : my.gameObject,
                 my.InstallTarget,
                 aac,
                 definition,

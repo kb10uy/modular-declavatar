@@ -10,6 +10,7 @@ using AnimatorAsCode.V1.ModularAvatar;
 using AnimatorAsCode.V1.VRC;
 using nadena.dev.modular_avatar.core;
 using KusakaFactory.Declavatar.Runtime;
+using KusakaFactory.Declavatar.Editor;
 
 namespace KusakaFactory.Declavatar
 {
@@ -21,6 +22,7 @@ namespace KusakaFactory.Declavatar
         private IReadOnlyList<ExternalAsset> _externalAssets;
         private AacFlBase _ndmfAac;
         private MaAc _maAc;
+        private BuildLogWindow _logWindow;
 
         private GameObjectSearcher _searcher;
 
@@ -32,6 +34,7 @@ namespace KusakaFactory.Declavatar
             _externalAssets = assets;
             _ndmfAac = aac;
             _maAc = MaAc.Create(root);
+            _logWindow = null;
 
             _searcher = new GameObjectSearcher(root);
         }
@@ -50,22 +53,29 @@ namespace KusakaFactory.Declavatar
             GeneratePreventionLayers(fxAnimator);
             foreach (var animationGroup in _declavatarDefinition.AnimationGroups)
             {
-                switch (animationGroup.Content)
+                try
                 {
-                    case AnimationGroup.Group g:
-                        GenerateGroupLayer(fxAnimator, animationGroup.Name, g);
-                        break;
-                    case AnimationGroup.Switch s:
-                        GenerateSwitchLayer(fxAnimator, animationGroup.Name, s);
-                        break;
-                    case AnimationGroup.Puppet p:
-                        GeneratePuppetLayer(fxAnimator, animationGroup.Name, p);
-                        break;
-                    case AnimationGroup.Layer l:
-                        GenerateRawLayer(fxAnimator, animationGroup.Name, l);
-                        break;
-                    default:
-                        throw new DeclavatarException("Invalid AnimationGroup deserialization object");
+                    switch (animationGroup.Content)
+                    {
+                        case AnimationGroup.Group g:
+                            GenerateGroupLayer(fxAnimator, animationGroup.Name, g);
+                            break;
+                        case AnimationGroup.Switch s:
+                            GenerateSwitchLayer(fxAnimator, animationGroup.Name, s);
+                            break;
+                        case AnimationGroup.Puppet p:
+                            GeneratePuppetLayer(fxAnimator, animationGroup.Name, p);
+                            break;
+                        case AnimationGroup.Layer l:
+                            GenerateRawLayer(fxAnimator, animationGroup.Name, l);
+                            break;
+                        default:
+                            throw new DeclavatarException("Invalid AnimationGroup deserialization object");
+                    }
+                }
+                catch (DeclavatarAssetException ex)
+                {
+                    LogRuntimeError(ex.Message);
                 }
             }
 
@@ -173,23 +183,30 @@ namespace KusakaFactory.Declavatar
             var idleClip = _ndmfAac.NewClip($"sg-{name}-0");
             foreach (var target in g.DefaultTargets)
             {
-                switch (target)
+                try
                 {
-                    case Target.Shape shape:
-                        var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                        idleClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                        break;
-                    case Target.Object obj:
-                        var go = _searcher.FindGameObject(obj.Name);
-                        idleClip.Toggling(go, obj.Enabled);
-                        break;
-                    case Target.Material material:
-                        var mr = _searcher.FindRenderer(material.Mesh);
-                        var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                        idleClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                        break;
-                    default:
-                        throw new DeclavatarException("Invalid Target deserialization object");
+                    switch (target)
+                    {
+                        case Target.Shape shape:
+                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
+                            idleClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
+                            break;
+                        case Target.Object obj:
+                            var go = _searcher.FindGameObject(obj.Name);
+                            idleClip.Toggling(go, obj.Enabled);
+                            break;
+                        case Target.Material material:
+                            var mr = _searcher.FindRenderer(material.Mesh);
+                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
+                            idleClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                            break;
+                        default:
+                            throw new DeclavatarException("Invalid Target deserialization object");
+                    }
+                }
+                catch (DeclavatarRuntimeException ex)
+                {
+                    LogRuntimeError(ex.Message);
                 }
             }
             var idleState = layer.NewState("Disabled", 0, 0).WithAnimation(idleClip);
@@ -199,23 +216,30 @@ namespace KusakaFactory.Declavatar
                 var clip = _ndmfAac.NewClip($"sg-{name}-{option.Order}");
                 foreach (var target in option.Targets)
                 {
-                    switch (target)
+                    try
                     {
-                        case Target.Shape shape:
-                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                            clip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                            break;
-                        case Target.Object obj:
-                            var go = _searcher.FindGameObject(obj.Name);
-                            clip.Toggling(go, obj.Enabled);
-                            break;
-                        case Target.Material material:
-                            var mr = _searcher.FindRenderer(material.Mesh);
-                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                            clip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                            break;
-                        default:
-                            throw new DeclavatarException("Invalid Target deserialization object");
+                        switch (target)
+                        {
+                            case Target.Shape shape:
+                                var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
+                                clip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
+                                break;
+                            case Target.Object obj:
+                                var go = _searcher.FindGameObject(obj.Name);
+                                clip.Toggling(go, obj.Enabled);
+                                break;
+                            case Target.Material material:
+                                var mr = _searcher.FindRenderer(material.Mesh);
+                                var targetMaterial = SearchExternalMaterial(material.AssetKey);
+                                clip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                                break;
+                            default:
+                                throw new DeclavatarException("Invalid Target deserialization object");
+                        }
+                    }
+                    catch (DeclavatarRuntimeException ex)
+                    {
+                        LogRuntimeError(ex.Message);
                     }
                 }
                 var state = layer.NewState($"{option.Order} {option.Name}", (int)option.Order / 8 + 1, (int)option.Order % 8).WithAnimation(clip);
@@ -233,44 +257,58 @@ namespace KusakaFactory.Declavatar
             var enabledClip = _ndmfAac.NewClip($"ss-{name}-enabled");
             foreach (var target in s.Disabled)
             {
-                switch (target)
+                try
                 {
-                    case Target.Shape shape:
-                        var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                        disabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                        break;
-                    case Target.Object obj:
-                        var go = _searcher.FindGameObject(obj.Name);
-                        disabledClip.Toggling(go, obj.Enabled);
-                        break;
-                    case Target.Material material:
-                        var mr = _searcher.FindRenderer(material.Mesh);
-                        var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                        disabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                        break;
-                    default:
-                        throw new DeclavatarException("Invalid Target deserialization object");
+                    switch (target)
+                    {
+                        case Target.Shape shape:
+                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
+                            disabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
+                            break;
+                        case Target.Object obj:
+                            var go = _searcher.FindGameObject(obj.Name);
+                            disabledClip.Toggling(go, obj.Enabled);
+                            break;
+                        case Target.Material material:
+                            var mr = _searcher.FindRenderer(material.Mesh);
+                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
+                            disabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                            break;
+                        default:
+                            throw new DeclavatarException("Invalid Target deserialization object");
+                    }
+                }
+                catch (DeclavatarRuntimeException ex)
+                {
+                    LogRuntimeError(ex.Message);
                 }
             }
             foreach (var target in s.Enabled)
             {
-                switch (target)
+                try
                 {
-                    case Target.Shape shape:
-                        var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                        enabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                        break;
-                    case Target.Object obj:
-                        var go = _searcher.FindGameObject(obj.Name);
-                        enabledClip.Toggling(go, obj.Enabled);
-                        break;
-                    case Target.Material material:
-                        var mr = _searcher.FindRenderer(material.Mesh);
-                        var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                        enabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                        break;
-                    default:
-                        throw new DeclavatarException("Invalid Target deserialization object");
+                    switch (target)
+                    {
+                        case Target.Shape shape:
+                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
+                            enabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
+                            break;
+                        case Target.Object obj:
+                            var go = _searcher.FindGameObject(obj.Name);
+                            enabledClip.Toggling(go, obj.Enabled);
+                            break;
+                        case Target.Material material:
+                            var mr = _searcher.FindRenderer(material.Mesh);
+                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
+                            enabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                            break;
+                        default:
+                            throw new DeclavatarException("Invalid Target deserialization object");
+                    }
+                }
+                catch (DeclavatarRuntimeException ex)
+                {
+                    LogRuntimeError(ex.Message);
                 }
             }
             var disabledState = layer.NewState("Disabled").WithAnimation(disabledClip);
@@ -293,37 +331,44 @@ namespace KusakaFactory.Declavatar
             {
                 foreach (var group in groups)
                 {
-                    if (group.Key.StartsWith("s://"))
+                    try
                     {
-                        var points = group.Select((p) => (p.Position, Target: p.Target as Target.Shape)).ToList();
-                        var smr = _searcher.FindSkinnedMeshRenderer(points[0].Target.Mesh);
-                        e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
+                        if (group.Key.StartsWith("s://"))
                         {
-                            foreach (var point in points) kfs.Linear(point.Position * 100.0f, point.Target.Value * 100.0f);
-                        });
-                    }
-                    else if (group.Key.StartsWith("o://"))
-                    {
-                        var points = group.Select((p) => (p.Position, Target: p.Target as Target.Object)).ToList();
-                        var go = _searcher.FindGameObject(points[0].Target.Name);
-                        e.Animates(go).WithFrameCountUnit((kfs) =>
+                            var points = group.Select((p) => (p.Position, Target: p.Target as Target.Shape)).ToList();
+                            var smr = _searcher.FindSkinnedMeshRenderer(points[0].Target.Mesh);
+                            e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
+                            {
+                                foreach (var point in points) kfs.Linear(point.Position * 100.0f, point.Target.Value * 100.0f);
+                            });
+                        }
+                        else if (group.Key.StartsWith("o://"))
                         {
-                            foreach (var point in points) kfs.Constant(point.Position * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
-                        });
-                    }
-                    else if (group.Key.StartsWith("m://"))
-                    {
-                        // Use traditional API for matarial swapping
-                        var points = group.Select((p) => (p.Position, Target: p.Target as Target.Material)).ToList();
-                        var mr = _searcher.FindRenderer(points[0].Target.Mesh);
+                            var points = group.Select((p) => (p.Position, Target: p.Target as Target.Object)).ToList();
+                            var go = _searcher.FindGameObject(points[0].Target.Name);
+                            e.Animates(go).WithFrameCountUnit((kfs) =>
+                            {
+                                foreach (var point in points) kfs.Constant(point.Position * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
+                            });
+                        }
+                        else if (group.Key.StartsWith("m://"))
+                        {
+                            // Use traditional API for matarial swapping
+                            var points = group.Select((p) => (p.Position, Target: p.Target as Target.Material)).ToList();
+                            var mr = _searcher.FindRenderer(points[0].Target.Mesh);
 
-                        var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
-                        var keyframes = points.Select((p) => new ObjectReferenceKeyframe
-                        {
-                            time = p.Position * 100.0f,
-                            value = SearchExternalMaterial(p.Target.AssetKey),
-                        }).ToArray();
-                        AnimationUtility.SetObjectReferenceCurve(clip.Clip, binding, keyframes);
+                            var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
+                            var keyframes = points.Select((p) => new ObjectReferenceKeyframe
+                            {
+                                time = p.Position * 100.0f,
+                                value = SearchExternalMaterial(p.Target.AssetKey),
+                            }).ToArray();
+                            AnimationUtility.SetObjectReferenceCurve(clip.Clip, binding, keyframes);
+                        }
+                    }
+                    catch (DeclavatarRuntimeException ex)
+                    {
+                        LogRuntimeError(ex.Message);
                     }
                 }
             });
@@ -705,6 +750,12 @@ namespace KusakaFactory.Declavatar
         #endregion
 
         #region Object Searching
+
+        private void LogRuntimeError(string message)
+        {
+            if (_logWindow == null) _logWindow = BuildLogWindow.ShowLogWindow();
+            _logWindow.AddLog(ErrorKind.RuntimeError, message);
+        }
 
         internal sealed class GameObjectSearcher
         {

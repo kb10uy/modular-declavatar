@@ -8,6 +8,7 @@ namespace KusakaFactory.Declavatar.Runtime
         public TextAsset Definition;
         public ExternalAsset[] ExternalAssets;
 
+        public GameObject DeclarationRoot;
         public GameObject InstallTarget;
     }
 }

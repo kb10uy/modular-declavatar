@@ -10,6 +10,7 @@ namespace KusakaFactory.Declavatar.Editor
     {
         private SerializedProperty _definitionProperty;
         private SerializedProperty _externalAssetsProperty;
+        private SerializedProperty _declarationRootProperty;
         private SerializedProperty _installTargetProperty;
 
         private ReorderableList _externalAssetsList;
@@ -18,6 +19,7 @@ namespace KusakaFactory.Declavatar.Editor
         {
             _definitionProperty = serializedObject.FindProperty("Definition");
             _externalAssetsProperty = serializedObject.FindProperty("ExternalAssets");
+            _declarationRootProperty = serializedObject.FindProperty("DeclarationRoot");
             _installTargetProperty = serializedObject.FindProperty("InstallTarget");
 
             _externalAssetsList = new ReorderableList(serializedObject, _externalAssetsProperty)
@@ -43,9 +45,14 @@ namespace KusakaFactory.Declavatar.Editor
             EditorGUILayout.EndVertical();
 
             serializedObject.Update();
+
+            EditorGUILayout.PropertyField(_declarationRootProperty);
             EditorGUILayout.PropertyField(_installTargetProperty);
+            EditorGUILayout.Space();
+
             EditorGUILayout.PropertyField(_definitionProperty);
             _externalAssetsList.DoLayoutList();
+
             serializedObject.ApplyModifiedProperties();
         }
     }

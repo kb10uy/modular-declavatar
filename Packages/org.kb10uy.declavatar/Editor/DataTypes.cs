@@ -287,7 +287,6 @@ namespace KusakaFactory.Declavatar
         public sealed class ExMenuGroup : ExMenuItem
         {
             public string Name { get; set; }
-            public uint Id { get; set; }
             [JsonConverter(typeof(Converters.ExMenuItemsConverter))]
             public List<ExMenuItem> Items { get; set; }
         }

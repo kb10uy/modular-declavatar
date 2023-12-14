@@ -25,7 +25,7 @@ namespace KusakaFactory.Declavatar
             using (var declavatarPlugin = new Plugin())
             {
                 declavatarPlugin.Reset();
-                if (!declavatarPlugin.Compile(my.Definition.text))
+                if (!declavatarPlugin.Compile(my.Definition.text, (FormatKind)(uint)my.Format))
                 {
                     var errorWindow = BuildLogWindow.ShowLogWindow();
                     errorWindow.SetLog(declavatarPlugin.FetchErrors());

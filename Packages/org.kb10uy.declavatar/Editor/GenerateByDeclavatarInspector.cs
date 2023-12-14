@@ -8,6 +8,7 @@ namespace KusakaFactory.Declavatar.Editor
     [CustomEditor(typeof(GenerateByDeclavatar))]
     public class GenerateByDeclavatarInspector : UnityEditor.Editor
     {
+        private SerializedProperty _formatProperty;
         private SerializedProperty _definitionProperty;
         private SerializedProperty _externalAssetsProperty;
         private SerializedProperty _declarationRootProperty;
@@ -17,6 +18,7 @@ namespace KusakaFactory.Declavatar.Editor
 
         public void OnEnable()
         {
+            _formatProperty = serializedObject.FindProperty("Format");
             _definitionProperty = serializedObject.FindProperty("Definition");
             _externalAssetsProperty = serializedObject.FindProperty("ExternalAssets");
             _declarationRootProperty = serializedObject.FindProperty("DeclarationRoot");
@@ -45,12 +47,12 @@ namespace KusakaFactory.Declavatar.Editor
             EditorGUILayout.EndVertical();
 
             serializedObject.Update();
+            EditorGUILayout.PropertyField(_formatProperty);
+            EditorGUILayout.PropertyField(_definitionProperty);
+            EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(_declarationRootProperty);
             EditorGUILayout.PropertyField(_installTargetProperty);
-            EditorGUILayout.Space();
-
-            EditorGUILayout.PropertyField(_definitionProperty);
             _externalAssetsList.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();

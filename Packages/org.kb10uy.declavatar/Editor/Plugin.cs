@@ -22,15 +22,15 @@ namespace KusakaFactory.Declavatar
         [DllImport(LIBRARY_NAME)]
         public static extern StatusCode DeclavatarReset(NativeHandle da);
         [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarCompile(NativeHandle da, ref byte source, uint sourceLength);
+        public static extern StatusCode DeclavatarAddLibraryPath(NativeHandle da, ref byte path, uint pathLength);
+        [DllImport(LIBRARY_NAME)]
+        public static extern StatusCode DeclavatarCompile(NativeHandle da, ref byte source, uint sourceLength, uint formatKind);
         [DllImport(LIBRARY_NAME)]
         public static extern StatusCode DeclavatarGetAvatarJson(NativeHandle da, ref IntPtr json, ref uint jsonLength);
         [DllImport(LIBRARY_NAME)]
         public static extern StatusCode DeclavatarGetErrorsCount(NativeHandle da, ref uint errors);
         [DllImport(LIBRARY_NAME)]
         public static extern StatusCode DeclavatarGetError(NativeHandle da, uint index, ref uint errorKind, ref IntPtr message, ref uint messageLength);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarPushExampleErrors(NativeHandle da);
     }
 
     internal enum StatusCode : uint
@@ -52,6 +52,12 @@ namespace KusakaFactory.Declavatar
 
         // Runtime use only
         RuntimeError = 1048576,
+    }
+
+    internal enum FormatKind : uint
+    {
+        SExpression = 1,
+        Lua = 2,
     }
 
     internal sealed class NativeHandle : SafeHandle
@@ -93,10 +99,16 @@ namespace KusakaFactory.Declavatar
             _lastCompileResult = StatusCode.NotCompiled;
         }
 
-        public bool Compile(string inputKdl)
+        public void AddLibraryPath(string path)
         {
-            var utf8bytes = Encoding.UTF8.GetBytes(inputKdl);
-            _lastCompileResult = Native.DeclavatarCompile(_handle, ref utf8bytes[0], (uint)utf8bytes.Length);
+            var utf8bytes = Encoding.UTF8.GetBytes(path);
+            Native.DeclavatarAddLibraryPath(_handle, ref utf8bytes[0], (uint)utf8bytes.Length);
+        }
+
+        public bool Compile(string source, FormatKind kind)
+        {
+            var utf8bytes = Encoding.UTF8.GetBytes(source);
+            _lastCompileResult = Native.DeclavatarCompile(_handle, ref utf8bytes[0], (uint)utf8bytes.Length, (uint)kind);
             return _lastCompileResult == StatusCode.Success;
         }
 
@@ -138,11 +150,6 @@ namespace KusakaFactory.Declavatar
             }
 
             return errors;
-        }
-
-        public void PushExampleErrors()
-        {
-            Native.DeclavatarPushExampleErrors(_handle);
         }
 
         public void Dispose()

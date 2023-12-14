@@ -368,6 +368,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 825f440f592978649a328963f1bb9e75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Format: 1
   Definition: {fileID: 0}
   ExternalAssets: []
   DeclarationRoot: {fileID: 0}

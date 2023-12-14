@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace KusakaFactory.Declavatar.Editor
+namespace KusakaFactory.Declavatar.EditorExtension
 {
     internal static class Constants
     {

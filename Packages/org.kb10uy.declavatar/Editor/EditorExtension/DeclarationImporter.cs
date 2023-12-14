@@ -3,7 +3,7 @@ using System.Text;
 using UnityEngine;
 using UnityEditor.Experimental.AssetImporters;
 
-namespace KusakaFactory.Declavatar
+namespace KusakaFactory.Declavatar.EditorExtension
 {
     [ScriptedImporter(1, "kdl")]
     public sealed class DeclarationImporter : ScriptedImporter

@@ -9,8 +9,8 @@ using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.ModularAvatar;
 using AnimatorAsCode.V1.VRC;
 using nadena.dev.modular_avatar.core;
+using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
-using KusakaFactory.Declavatar.Editor;
 
 namespace KusakaFactory.Declavatar
 {
@@ -530,7 +530,7 @@ namespace KusakaFactory.Declavatar
         private void GenerateMenuNonDestructive()
         {
             var rootMenuItem = new GameObject("DeclavatarMenuRoot");
-            // var installer = 
+            // var installer =
             if (_installTarget != null)
             {
                 _installTarget.AddComponent<ModularAvatarMenuInstaller>();

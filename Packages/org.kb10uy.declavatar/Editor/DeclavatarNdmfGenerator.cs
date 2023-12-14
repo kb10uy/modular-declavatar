@@ -6,8 +6,8 @@ using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
 using AnimatorAsCode.V1.NDMFProcessor;
 using KusakaFactory.Declavatar;
+using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
-using KusakaFactory.Declavatar.Editor;
 
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfGenerator))]
 [assembly: ExportsPlugin(typeof(DeclavatarComponentRemover))]

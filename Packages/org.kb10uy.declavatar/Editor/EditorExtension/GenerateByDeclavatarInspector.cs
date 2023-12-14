@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using KusakaFactory.Declavatar.Runtime;
 
-namespace KusakaFactory.Declavatar.Editor
+namespace KusakaFactory.Declavatar.EditorExtension
 {
     [CustomEditor(typeof(GenerateByDeclavatar))]
     public class GenerateByDeclavatarInspector : UnityEditor.Editor

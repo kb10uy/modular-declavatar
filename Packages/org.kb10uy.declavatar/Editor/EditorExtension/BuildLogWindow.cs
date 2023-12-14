@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-namespace KusakaFactory.Declavatar.Editor
+namespace KusakaFactory.Declavatar.EditorExtension
 {
     public class BuildLogWindow : EditorWindow
     {

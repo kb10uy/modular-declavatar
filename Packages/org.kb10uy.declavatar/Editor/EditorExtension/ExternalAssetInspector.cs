@@ -3,7 +3,7 @@ using UnityEditorInternal;
 using UnityEngine;
 using KusakaFactory.Declavatar.Runtime;
 
-namespace KusakaFactory.Declavatar.Editor
+namespace KusakaFactory.Declavatar.EditorExtension
 {
     [CustomEditor(typeof(ExternalAsset))]
     public sealed class ExternalAssetInspector : UnityEditor.Editor

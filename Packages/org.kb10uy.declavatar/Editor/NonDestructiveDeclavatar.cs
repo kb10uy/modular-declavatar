@@ -9,9 +9,9 @@ using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.ModularAvatar;
 using AnimatorAsCode.V1.VRC;
 using nadena.dev.modular_avatar.core;
-using KusakaFactory.Declavatar;
 using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
+using VRC.SDKBase;
 
 namespace KusakaFactory.Declavatar
 {
@@ -90,105 +90,13 @@ namespace KusakaFactory.Declavatar
 
         #region FX Layer Generation
 
-        /*
-        private void GeneratePreventionLayers(AacFlController controller)
-        {
-            var preventions = _declavatarDefinition.AnimationGroups.Select((ag) =>
-            {
-                switch (ag.Content)
-                {
-                    case AnimationGroup.Group g: return (g.Preventions, g.Parameter, IsInt: true);
-                    case AnimationGroup.Switch s: return (s.Preventions, s.Parameter, IsInt: false);
-                    default: return (new Preventions(), null, false);
-                }
-            });
-
-            var mouthPreventions = preventions.Where((p) => p.Preventions.Mouth).Select((p) => (p.Parameter, p.IsInt)).ToList();
-            var mouthPreventionLayer = controller.NewLayer("MouthPrevention");
-            var mouthTrackingState = mouthPreventionLayer.NewState("Tracking").TrackingTracks(AacAv3.Av3TrackingElement.Mouth);
-            var mouthAnimationState = mouthPreventionLayer.NewState("Animation").TrackingAnimates(AacAv3.Av3TrackingElement.Mouth);
-
-            if (mouthPreventions.Count > 0)
-            {
-                var (firstName, firstIsInt) = mouthPreventions[0];
-                AacFlTransitionContinuation mouthTrackingConditon;
-                AacFlTransitionContinuation mouthAnimationCondition;
-                if (firstIsInt)
-                {
-                    var firstParameter = mouthPreventionLayer.IntParameter(firstName);
-                    mouthTrackingConditon = mouthAnimationState.TransitionsTo(mouthTrackingState).When(firstParameter.IsEqualTo(0));
-                    mouthAnimationCondition = mouthTrackingState.TransitionsTo(mouthAnimationState).When(firstParameter.IsNotEqualTo(0));
-                }
-                else
-                {
-                    var firstParameter = mouthPreventionLayer.BoolParameter(firstName);
-                    mouthTrackingConditon = mouthAnimationState.TransitionsTo(mouthTrackingState).When(firstParameter.IsFalse());
-                    mouthAnimationCondition = mouthTrackingState.TransitionsTo(mouthAnimationState).When(firstParameter.IsTrue());
-                }
-                foreach (var (name, isInt) in mouthPreventions.Skip(1))
-                {
-                    if (isInt)
-                    {
-                        var parameter = mouthPreventionLayer.IntParameter(name);
-                        mouthTrackingConditon.And(parameter.IsEqualTo(0));
-                        mouthAnimationCondition.Or().When(parameter.IsNotEqualTo(0));
-                    }
-                    else
-                    {
-                        var parameter = mouthPreventionLayer.BoolParameter(name);
-                        mouthTrackingConditon.And(parameter.IsFalse());
-                        mouthAnimationCondition.Or().When(parameter.IsTrue());
-                    }
-                }
-            }
-
-            var eyelidsPreventions = preventions.Where((p) => p.Preventions.Eyelids).Select((p) => (p.Parameter, p.IsInt)).ToList();
-            var eyelidsPreventionLayer = controller.NewLayer("EyelidsPrevention");
-            var eyelidsTrackingState = eyelidsPreventionLayer.NewState("Tracking").TrackingTracks(AacAv3.Av3TrackingElement.Eyes);
-            var eyelidsAnimationState = eyelidsPreventionLayer.NewState("Animation").TrackingAnimates(AacAv3.Av3TrackingElement.Eyes);
-
-            if (eyelidsPreventions.Count > 0)
-            {
-                var (firstName, firstIsInt) = eyelidsPreventions[0];
-                AacFlTransitionContinuation eyelidsTrackingConditon;
-                AacFlTransitionContinuation eyelidsAnimationCondition;
-                if (firstIsInt)
-                {
-                    var firstParameter = eyelidsPreventionLayer.IntParameter(firstName);
-                    eyelidsTrackingConditon = eyelidsAnimationState.TransitionsTo(eyelidsTrackingState).When(firstParameter.IsEqualTo(0));
-                    eyelidsAnimationCondition = eyelidsTrackingState.TransitionsTo(eyelidsAnimationState).When(firstParameter.IsNotEqualTo(0));
-                }
-                else
-                {
-                    var firstParameter = eyelidsPreventionLayer.BoolParameter(firstName);
-                    eyelidsTrackingConditon = eyelidsAnimationState.TransitionsTo(eyelidsTrackingState).When(firstParameter.IsFalse());
-                    eyelidsAnimationCondition = eyelidsTrackingState.TransitionsTo(eyelidsAnimationState).When(firstParameter.IsTrue());
-                }
-                foreach (var (name, isInt) in eyelidsPreventions.Skip(1))
-                {
-                    if (isInt)
-                    {
-                        var parameter = eyelidsPreventionLayer.IntParameter(name);
-                        eyelidsTrackingConditon.And(parameter.IsEqualTo(0));
-                        eyelidsAnimationCondition.Or().When(parameter.IsNotEqualTo(0));
-                    }
-                    else
-                    {
-                        var parameter = eyelidsPreventionLayer.BoolParameter(name);
-                        eyelidsTrackingConditon.And(parameter.IsFalse());
-                        eyelidsAnimationCondition.Or().When(parameter.IsTrue());
-                    }
-                }
-            }
-        }
-        */
-
         private void GenerateGroupLayer(AacFlController controller, string name, Data.Layer.GroupLayer g)
         {
             var layer = controller.NewLayer(name);
             var layerParameter = layer.IntParameter(g.Parameter);
 
             var idleClip = _ndmfAac.NewClip($"sg-{name}-0");
+            var idleState = layer.NewState("Disabled", 0, 0).WithAnimation(idleClip);
             foreach (var target in g.Default.Targets)
             {
                 try
@@ -209,7 +117,10 @@ namespace KusakaFactory.Declavatar
                             idleClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
                             break;
                         case Data.Target.Drive drive:
-                            LogRuntimeError("ParameterDrive");
+                            AppendStateParameterDrive(layer, idleState, drive.ParameterDrive);
+                            break;
+                        case Data.Target.Tracking control:
+                            AppendStateTrackingControl(idleState, control.Control);
                             break;
                         default:
                             throw new DeclavatarException("Invalid Target deserialization object");
@@ -220,11 +131,11 @@ namespace KusakaFactory.Declavatar
                     LogRuntimeError(ex.Message);
                 }
             }
-            var idleState = layer.NewState("Disabled", 0, 0).WithAnimation(idleClip);
 
             foreach (var option in g.Options)
             {
                 var clip = _ndmfAac.NewClip($"sg-{name}-{option.Value}");
+                var state = layer.NewState($"{option.Value} {option.Name}", (int)option.Value / 8 + 1, (int)option.Value % 8).WithAnimation(clip);
                 foreach (var target in option.Targets)
                 {
                     try
@@ -245,7 +156,10 @@ namespace KusakaFactory.Declavatar
                                 clip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
                                 break;
                             case Data.Target.Drive drive:
-                                LogRuntimeError("ParameterDrive");
+                                AppendStateParameterDrive(layer, state, drive.ParameterDrive);
+                                break;
+                            case Data.Target.Tracking control:
+                                AppendStateTrackingControl(state, control.Control);
                                 break;
                             default:
                                 throw new DeclavatarException("Invalid Target deserialization object");
@@ -256,7 +170,6 @@ namespace KusakaFactory.Declavatar
                         LogRuntimeError(ex.Message);
                     }
                 }
-                var state = layer.NewState($"{option.Value} {option.Name}", (int)option.Value / 8 + 1, (int)option.Value % 8).WithAnimation(clip);
                 idleState.TransitionsTo(state).When(layerParameter.IsEqualTo((int)option.Value));
                 state.Exits().When(layerParameter.IsNotEqualTo((int)option.Value));
             }
@@ -269,6 +182,8 @@ namespace KusakaFactory.Declavatar
 
             var disabledClip = _ndmfAac.NewClip($"ss-{name}-disabled");
             var enabledClip = _ndmfAac.NewClip($"ss-{name}-enabled");
+            var disabledState = layer.NewState("Disabled").WithAnimation(disabledClip);
+            var enabledState = layer.NewState("Enabled").WithAnimation(enabledClip);
             foreach (var target in s.Disabled)
             {
                 try
@@ -289,7 +204,10 @@ namespace KusakaFactory.Declavatar
                             disabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
                             break;
                         case Data.Target.Drive drive:
-                            LogRuntimeError("ParameterDrive");
+                            AppendStateParameterDrive(layer, disabledState, drive.ParameterDrive);
+                            break;
+                        case Data.Target.Tracking control:
+                            AppendStateTrackingControl(disabledState, control.Control);
                             break;
                         default:
                             throw new DeclavatarException("Invalid Target deserialization object");
@@ -320,7 +238,10 @@ namespace KusakaFactory.Declavatar
                             enabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
                             break;
                         case Data.Target.Drive drive:
-                            LogRuntimeError("ParameterDrive");
+                            AppendStateParameterDrive(layer, enabledState, drive.ParameterDrive);
+                            break;
+                        case Data.Target.Tracking control:
+                            AppendStateTrackingControl(enabledState, control.Control);
                             break;
                         default:
                             throw new DeclavatarException("Invalid Target deserialization object");
@@ -331,8 +252,7 @@ namespace KusakaFactory.Declavatar
                     LogRuntimeError(ex.Message);
                 }
             }
-            var disabledState = layer.NewState("Disabled").WithAnimation(disabledClip);
-            var enabledState = layer.NewState("Enabled").WithAnimation(enabledClip);
+
             disabledState.TransitionsTo(enabledState).When(layerParameter.IsTrue());
             enabledState.TransitionsTo(disabledState).When(layerParameter.IsFalse());
         }
@@ -512,6 +432,56 @@ namespace KusakaFactory.Declavatar
                             throw new DeclavatarInternalException("Invalid LayerCondition deserialization object");
                     }
                 }
+            }
+        }
+
+        private void AppendStateParameterDrive(AacFlLayer layer, AacFlState state, Data.ParameterDrive drive)
+        {
+            switch (drive)
+            {
+                case Data.ParameterDrive.SetInt si:
+                    state.Drives(layer.IntParameter(si.Parameter), si.Value);
+                    break;
+                case Data.ParameterDrive.SetBool sb:
+                    state.Drives(layer.BoolParameter(sb.Parameter), sb.Value);
+                    break;
+                case Data.ParameterDrive.SetFloat sf:
+                    state.Drives(layer.FloatParameter(sf.Parameter), sf.Value);
+                    break;
+                case Data.ParameterDrive.AddInt ai:
+                    state.DrivingIncreases(layer.IntParameter(ai.Parameter), ai.Value);
+                    break;
+                case Data.ParameterDrive.AddFloat af:
+                    state.DrivingIncreases(layer.FloatParameter(af.Parameter), af.Value);
+                    break;
+                case Data.ParameterDrive.RandomInt ri:
+                    state.DrivingRandomizesLocally(layer.IntParameter(ri.Parameter), ri.Range[0], ri.Range[1]);
+                    break;
+                case Data.ParameterDrive.RandomBool rb:
+                    state.DrivingRandomizesLocally(layer.BoolParameter(rb.Parameter), rb.Chance);
+                    break;
+                case Data.ParameterDrive.RandomFloat rf:
+                    state.DrivingRandomizesLocally(layer.FloatParameter(rf.Parameter), rf.Range[0], rf.Range[1]);
+                    break;
+                case Data.ParameterDrive.Copy cp:
+                    state.DrivingCopies(layer.FloatParameter(cp.From), layer.FloatParameter(cp.To));
+                    break;
+                case Data.ParameterDrive.RangedCopy rcp:
+                    state.DrivingRemaps(layer.FloatParameter(rcp.From), rcp.FromRange[0], rcp.FromRange[1], layer.FloatParameter(rcp.To), rcp.ToRange[0], rcp.ToRange[1]);
+                    break;
+            }
+        }
+
+        private void AppendStateTrackingControl(AacFlState state, Data.TrackingControl control)
+        {
+            foreach (var target in control.Targets)
+            {
+                state.TrackingSets(
+                    Data.VRChatExtension.ConvertToAacTarget(target),
+                    control.AnimationDesired ?
+                        VRC_AnimatorTrackingControl.TrackingType.Animation :
+                        VRC_AnimatorTrackingControl.TrackingType.Tracking
+                );
             }
         }
 

@@ -171,6 +171,11 @@ namespace KusakaFactory.Declavatar.Data
         {
             public ParameterDrive ParameterDrive { get; set; }
         }
+
+        public sealed class Tracking : Target
+        {
+            public TrackingControl Control { get; set; }
+        }
     }
 
     public static partial class Converters
@@ -350,7 +355,8 @@ namespace KusakaFactory.Declavatar.Data
                     case "Shape": return new Target.Shape { Mesh = content["mesh"].Value<string>(), Name = content["shape"].Value<string>(), Value = content["value"].Value<float>(), };
                     case "Object": return new Target.Object { Name = content["object"].Value<string>(), Enabled = content["value"].Value<bool>() };
                     case "Material": return new Target.Material { Mesh = content["mesh"].Value<string>(), Slot = content["index"].Value<uint>(), AssetKey = content["asset"].Value<string>() };
-                    case "ParameterDrive": return new Target.Drive { ParameterDrive = content["mesh"].ToObject<ParameterDrive>() };
+                    case "ParameterDrive": return new Target.Drive { ParameterDrive = content.ToObject<ParameterDrive>() };
+                    case "TrackingControl": return new Target.Tracking { Control = content.ToObject<TrackingControl>() };
                     default: throw new JsonException("invalid driver type");
                 }
             }
@@ -362,7 +368,7 @@ namespace KusakaFactory.Declavatar.Data
         }
     }
 
-    public static class VRChatExtension
+    public static partial class VRChatExtension
     {
         public static string AsGroupingKey(this Target target)
         {

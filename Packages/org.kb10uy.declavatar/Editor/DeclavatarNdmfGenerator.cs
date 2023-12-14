@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System.Linq;
 using UnityEngine;
 using Newtonsoft.Json;
@@ -25,6 +24,14 @@ namespace KusakaFactory.Declavatar
             using (var declavatarPlugin = new Plugin())
             {
                 declavatarPlugin.Reset();
+
+                var config = Configuration.LoadEditorUserSettings();
+                foreach (var path in config.LibraryRelativePath)
+                {
+                    var p = path.Trim();
+                    if (!string.IsNullOrEmpty(p)) declavatarPlugin.AddLibraryPath(path);
+                }
+
                 if (!declavatarPlugin.Compile(my.Definition.text, (FormatKind)(uint)my.Format))
                 {
                     var errorWindow = BuildLogWindow.ShowLogWindow();
@@ -77,4 +84,3 @@ namespace KusakaFactory.Declavatar
         }
     }
 }
-#endif

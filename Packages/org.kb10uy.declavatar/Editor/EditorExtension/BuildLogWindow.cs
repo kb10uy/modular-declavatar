@@ -12,6 +12,7 @@ namespace KusakaFactory.Declavatar.EditorExtension
 
         #region External Methods
 
+        [MenuItem("Tools/Declavatar/Build Log")]
         internal static BuildLogWindow ShowLogWindow()
         {
             return GetWindow<BuildLogWindow>("Declavatar Build Log", true);

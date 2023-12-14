@@ -180,6 +180,20 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "org.kb10uy.declavatar": {
+      "version": "file:org.kb10uy.declavatar",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "nadena.dev.ndmf": "1.2.5",
+        "nadena.dev.modular-avatar": "1.8.3",
+        "com.unity.nuget.newtonsoft-json": "2.0.0",
+        "dev.hai-vr.animator-as-code.v1": "1.0.9920",
+        "dev.hai-vr.animator-as-code.v1.vrchat": "1.0.9920",
+        "dev.hai-vr.animator-as-code.v1.ndmf-processor": "1.0.9920",
+        "dev.hai-vr.animator-as-code.v1.modular-avatar": "1.0.9920"
+      }
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,

@@ -9,6 +9,7 @@ using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.ModularAvatar;
 using AnimatorAsCode.V1.VRC;
 using nadena.dev.modular_avatar.core;
+using KusakaFactory.Declavatar;
 using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
 
@@ -18,7 +19,7 @@ namespace KusakaFactory.Declavatar
     {
         private GameObject _rootGameObject;
         private GameObject _installTarget;
-        private Avatar _declavatarDefinition;
+        private Data.Avatar _declavatarDefinition;
         private IReadOnlyList<ExternalAsset> _externalAssets;
         private AacFlBase _ndmfAac;
         // private MaAc _maAc;
@@ -26,7 +27,7 @@ namespace KusakaFactory.Declavatar
 
         private GameObjectSearcher _searcher;
 
-        public NonDestructiveDeclavatar(GameObject root, GameObject installTarget, AacFlBase aac, Avatar definition, IReadOnlyList<ExternalAsset> assets)
+        public NonDestructiveDeclavatar(GameObject root, GameObject installTarget, AacFlBase aac, Data.Avatar definition, IReadOnlyList<ExternalAsset> assets)
         {
             _rootGameObject = root;
             _installTarget = installTarget;
@@ -50,24 +51,24 @@ namespace KusakaFactory.Declavatar
         {
             var fxAnimator = _ndmfAac.NewAnimatorController();
 
-            GeneratePreventionLayers(fxAnimator);
-            foreach (var animationGroup in _declavatarDefinition.AnimationGroups)
+            // GeneratePreventionLayers(fxAnimator);
+            foreach (var animationGroup in _declavatarDefinition.FxController)
             {
                 try
                 {
                     switch (animationGroup.Content)
                     {
-                        case AnimationGroup.Group g:
+                        case Data.Layer.GroupLayer g:
                             GenerateGroupLayer(fxAnimator, animationGroup.Name, g);
                             break;
-                        case AnimationGroup.Switch s:
+                        case Data.Layer.SwitchLayer s:
                             GenerateSwitchLayer(fxAnimator, animationGroup.Name, s);
                             break;
-                        case AnimationGroup.Puppet p:
+                        case Data.Layer.PuppetLayer p:
                             GeneratePuppetLayer(fxAnimator, animationGroup.Name, p);
                             break;
-                        case AnimationGroup.Layer l:
-                            GenerateRawLayer(fxAnimator, animationGroup.Name, l);
+                        case Data.Layer.RawLayer r:
+                            GenerateRawLayer(fxAnimator, animationGroup.Name, r);
                             break;
                         default:
                             throw new DeclavatarException("Invalid AnimationGroup deserialization object");
@@ -89,6 +90,7 @@ namespace KusakaFactory.Declavatar
 
         #region FX Layer Generation
 
+        /*
         private void GeneratePreventionLayers(AacFlController controller)
         {
             var preventions = _declavatarDefinition.AnimationGroups.Select((ag) =>
@@ -179,8 +181,9 @@ namespace KusakaFactory.Declavatar
                 }
             }
         }
+        */
 
-        private void GenerateGroupLayer(AacFlController controller, string name, AnimationGroup.Group g)
+        private void GenerateGroupLayer(AacFlController controller, string name, Data.Layer.GroupLayer g)
         {
             var layer = controller.NewLayer(name);
             var layerParameter = layer.IntParameter(g.Parameter);
@@ -192,18 +195,21 @@ namespace KusakaFactory.Declavatar
                 {
                     switch (target)
                     {
-                        case Target.Shape shape:
+                        case Data.Target.Shape shape:
                             var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
                             idleClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
                             break;
-                        case Target.Object obj:
+                        case Data.Target.Object obj:
                             var go = _searcher.FindGameObject(obj.Name);
                             idleClip.Toggling(go, obj.Enabled);
                             break;
-                        case Target.Material material:
+                        case Data.Target.Material material:
                             var mr = _searcher.FindRenderer(material.Mesh);
                             var targetMaterial = SearchExternalMaterial(material.AssetKey);
                             idleClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                            break;
+                        case Data.Target.Drive drive:
+                            LogRuntimeError("ParameterDrive");
                             break;
                         default:
                             throw new DeclavatarException("Invalid Target deserialization object");
@@ -218,25 +224,28 @@ namespace KusakaFactory.Declavatar
 
             foreach (var option in g.Options)
             {
-                var clip = _ndmfAac.NewClip($"sg-{name}-{option.Order}");
+                var clip = _ndmfAac.NewClip($"sg-{name}-{option.Value}");
                 foreach (var target in option.Targets)
                 {
                     try
                     {
                         switch (target)
                         {
-                            case Target.Shape shape:
+                            case Data.Target.Shape shape:
                                 var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
                                 clip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
                                 break;
-                            case Target.Object obj:
+                            case Data.Target.Object obj:
                                 var go = _searcher.FindGameObject(obj.Name);
                                 clip.Toggling(go, obj.Enabled);
                                 break;
-                            case Target.Material material:
+                            case Data.Target.Material material:
                                 var mr = _searcher.FindRenderer(material.Mesh);
                                 var targetMaterial = SearchExternalMaterial(material.AssetKey);
                                 clip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                                break;
+                            case Data.Target.Drive drive:
+                                LogRuntimeError("ParameterDrive");
                                 break;
                             default:
                                 throw new DeclavatarException("Invalid Target deserialization object");
@@ -247,13 +256,13 @@ namespace KusakaFactory.Declavatar
                         LogRuntimeError(ex.Message);
                     }
                 }
-                var state = layer.NewState($"{option.Order} {option.Name}", (int)option.Order / 8 + 1, (int)option.Order % 8).WithAnimation(clip);
-                idleState.TransitionsTo(state).When(layerParameter.IsEqualTo((int)option.Order));
-                state.Exits().When(layerParameter.IsNotEqualTo((int)option.Order));
+                var state = layer.NewState($"{option.Value} {option.Name}", (int)option.Value / 8 + 1, (int)option.Value % 8).WithAnimation(clip);
+                idleState.TransitionsTo(state).When(layerParameter.IsEqualTo((int)option.Value));
+                state.Exits().When(layerParameter.IsNotEqualTo((int)option.Value));
             }
         }
 
-        private void GenerateSwitchLayer(AacFlController controller, string name, AnimationGroup.Switch s)
+        private void GenerateSwitchLayer(AacFlController controller, string name, Data.Layer.SwitchLayer s)
         {
             var layer = controller.NewLayer(name);
             var layerParameter = layer.BoolParameter(s.Parameter);
@@ -266,18 +275,21 @@ namespace KusakaFactory.Declavatar
                 {
                     switch (target)
                     {
-                        case Target.Shape shape:
+                        case Data.Target.Shape shape:
                             var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
                             disabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
                             break;
-                        case Target.Object obj:
+                        case Data.Target.Object obj:
                             var go = _searcher.FindGameObject(obj.Name);
                             disabledClip.Toggling(go, obj.Enabled);
                             break;
-                        case Target.Material material:
+                        case Data.Target.Material material:
                             var mr = _searcher.FindRenderer(material.Mesh);
                             var targetMaterial = SearchExternalMaterial(material.AssetKey);
                             disabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                            break;
+                        case Data.Target.Drive drive:
+                            LogRuntimeError("ParameterDrive");
                             break;
                         default:
                             throw new DeclavatarException("Invalid Target deserialization object");
@@ -294,18 +306,21 @@ namespace KusakaFactory.Declavatar
                 {
                     switch (target)
                     {
-                        case Target.Shape shape:
+                        case Data.Target.Shape shape:
                             var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
                             enabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
                             break;
-                        case Target.Object obj:
+                        case Data.Target.Object obj:
                             var go = _searcher.FindGameObject(obj.Name);
                             enabledClip.Toggling(go, obj.Enabled);
                             break;
-                        case Target.Material material:
+                        case Data.Target.Material material:
                             var mr = _searcher.FindRenderer(material.Mesh);
                             var targetMaterial = SearchExternalMaterial(material.AssetKey);
                             enabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                            break;
+                        case Data.Target.Drive drive:
+                            LogRuntimeError("ParameterDrive");
                             break;
                         default:
                             throw new DeclavatarException("Invalid Target deserialization object");
@@ -322,14 +337,14 @@ namespace KusakaFactory.Declavatar
             enabledState.TransitionsTo(disabledState).When(layerParameter.IsFalse());
         }
 
-        private void GeneratePuppetLayer(AacFlController controller, string name, AnimationGroup.Puppet puppet)
+        private void GeneratePuppetLayer(AacFlController controller, string name, Data.Layer.PuppetLayer puppet)
         {
             var layer = controller.NewLayer(name);
             var layerParameter = layer.FloatParameter(puppet.Parameter);
 
             var groups = puppet.Keyframes
-                .SelectMany((kf) => kf.Targets.Select((t) => (kf.Position, Target: t)))
-                .GroupBy((p) => p.Target.AsGroupingKey());
+                .SelectMany((kf) => kf.Targets.Select((t) => (kf.Value, Target: t)))
+                .GroupBy((p) => Data.VRChatExtension.AsGroupingKey(p.Target));
 
             var clip = _ndmfAac.NewClip($"p-{name}").NonLooping();
             clip.Animating((e) =>
@@ -340,32 +355,32 @@ namespace KusakaFactory.Declavatar
                     {
                         if (group.Key.StartsWith("s://"))
                         {
-                            var points = group.Select((p) => (p.Position, Target: p.Target as Target.Shape)).ToList();
+                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Shape)).ToList();
                             var smr = _searcher.FindSkinnedMeshRenderer(points[0].Target.Mesh);
                             e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
                             {
-                                foreach (var point in points) kfs.Linear(point.Position * 100.0f, point.Target.Value * 100.0f);
+                                foreach (var point in points) kfs.Linear(point.Value * 100.0f, point.Target.Value * 100.0f);
                             });
                         }
                         else if (group.Key.StartsWith("o://"))
                         {
-                            var points = group.Select((p) => (p.Position, Target: p.Target as Target.Object)).ToList();
+                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Object)).ToList();
                             var go = _searcher.FindGameObject(points[0].Target.Name);
                             e.Animates(go).WithFrameCountUnit((kfs) =>
                             {
-                                foreach (var point in points) kfs.Constant(point.Position * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
+                                foreach (var point in points) kfs.Constant(point.Value * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
                             });
                         }
                         else if (group.Key.StartsWith("m://"))
                         {
                             // Use traditional API for matarial swapping
-                            var points = group.Select((p) => (p.Position, Target: p.Target as Target.Material)).ToList();
+                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Material)).ToList();
                             var mr = _searcher.FindRenderer(points[0].Target.Mesh);
 
                             var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
                             var keyframes = points.Select((p) => new ObjectReferenceKeyframe
                             {
-                                time = p.Position * 100.0f,
+                                time = p.Value * 100.0f,
                                 value = SearchExternalMaterial(p.Target.AssetKey),
                             }).ToArray();
                             AnimationUtility.SetObjectReferenceCurve(clip.Clip, binding, keyframes);
@@ -382,28 +397,32 @@ namespace KusakaFactory.Declavatar
             state.MotionTime(layerParameter);
         }
 
-        private void GenerateRawLayer(AacFlController controller, string name, AnimationGroup.Layer agLayer)
+        private void GenerateRawLayer(AacFlController controller, string name, Data.Layer.RawLayer rawLayer)
         {
             var layer = controller.NewLayer(name);
 
             // Create states
             var states = new List<AacFlState>();
-            foreach (var agState in agLayer.States)
+            foreach (var agState in rawLayer.States)
             {
                 var state = layer.NewState(agState.Name);
                 states.Add(state);
                 switch (agState.Animation)
                 {
-                    case LayerAnimation.Clip clip:
-                        state.WithAnimation(SearchExternalAnimationClip(clip.AssetKey));
-                        if (agState.Time != null)
+                    case Data.RawAnimation.Clip clip:
+                        state.WithAnimation(SearchExternalAnimationClip(clip.Name));
+                        if (clip.Speed != null)
                         {
-                            var speedParameter = layer.FloatParameter(agState.Time);
-                            state.MotionTime(speedParameter);
+                            var speedParameter = layer.FloatParameter(clip.SpeedBy);
+                            state.WithSpeed(speedParameter);
                         }
-                        // TODO: Speed parameters
+                        if (clip.TimeBy != null)
+                        {
+                            var timeParameter = layer.FloatParameter(clip.TimeBy);
+                            state.MotionTime(timeParameter);
+                        }
                         break;
-                    case LayerAnimation.BlendTree blendTree:
+                    case Data.RawAnimation.BlendTree blendTree:
                         var tree = new BlendTree();
                         switch (blendTree.BlendType)
                         {
@@ -412,7 +431,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameter = blendTree.Parameters[0];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
+                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
                                     tree.AddChild(fieldAnimation, field.Position[0]);
                                 }
                                 break;
@@ -422,7 +441,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
+                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
                                     tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
@@ -432,7 +451,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
+                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
                                     tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
@@ -442,7 +461,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.AssetKey);
+                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
                                     tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
@@ -455,45 +474,42 @@ namespace KusakaFactory.Declavatar
             }
 
             // Set transitions
-            for (int i = 0; i < states.Count; ++i)
+            foreach (var transition in rawLayer.Transitions)
             {
-                var fromState = states[i];
-                var agState = agLayer.States[i];
-                foreach (var transition in agState.Transitions)
+                var fromState = states[(int)transition.FromIndex];
+                var targetState = states[(int)transition.TargetIndex];
+                var andTerms = fromState.TransitionsTo(targetState).WithTransitionDurationSeconds(transition.Duration).WhenConditions();
+
+                foreach (var condBlock in transition.Conditions)
                 {
-                    var targetState = states[(int)transition.Target];
-                    var conds = fromState.TransitionsTo(targetState).WithTransitionDurationSeconds(transition.Duration).WhenConditions();
-                    foreach (var condBlock in transition.Conditions)
+                    switch (condBlock)
                     {
-                        switch (condBlock)
-                        {
-                            case LayerCondition.Be be:
-                                conds.And(layer.BoolParameter(be.Parameter).IsTrue());
-                                break;
-                            case LayerCondition.Not not:
-                                conds.And(layer.BoolParameter(not.Parameter).IsFalse());
-                                break;
-                            case LayerCondition.EqInt eqInt:
-                                conds.And(layer.IntParameter(eqInt.Parameter).IsEqualTo(eqInt.Value));
-                                break;
-                            case LayerCondition.NeqInt neqInt:
-                                conds.And(layer.IntParameter(neqInt.Parameter).IsNotEqualTo(neqInt.Value));
-                                break;
-                            case LayerCondition.GtInt gtInt:
-                                conds.And(layer.IntParameter(gtInt.Parameter).IsGreaterThan(gtInt.Value));
-                                break;
-                            case LayerCondition.LeInt leInt:
-                                conds.And(layer.IntParameter(leInt.Parameter).IsLessThan(leInt.Value));
-                                break;
-                            case LayerCondition.GtFloat gtFloat:
-                                conds.And(layer.FloatParameter(gtFloat.Parameter).IsGreaterThan(gtFloat.Value));
-                                break;
-                            case LayerCondition.LeFloat leFloat:
-                                conds.And(layer.FloatParameter(leFloat.Parameter).IsLessThan(leFloat.Value));
-                                break;
-                            default:
-                                throw new DeclavatarInternalException("Invalid LayerCondition deserialization object");
-                        }
+                        case Data.RawCondition.Be be:
+                            andTerms.And(layer.BoolParameter(be.Parameter).IsTrue());
+                            break;
+                        case Data.RawCondition.Not not:
+                            andTerms.And(layer.BoolParameter(not.Parameter).IsFalse());
+                            break;
+                        case Data.RawCondition.EqInt eqInt:
+                            andTerms.And(layer.IntParameter(eqInt.Parameter).IsEqualTo(eqInt.Value));
+                            break;
+                        case Data.RawCondition.NeqInt neqInt:
+                            andTerms.And(layer.IntParameter(neqInt.Parameter).IsNotEqualTo(neqInt.Value));
+                            break;
+                        case Data.RawCondition.GtInt gtInt:
+                            andTerms.And(layer.IntParameter(gtInt.Parameter).IsGreaterThan(gtInt.Value));
+                            break;
+                        case Data.RawCondition.LeInt leInt:
+                            andTerms.And(layer.IntParameter(leInt.Parameter).IsLessThan(leInt.Value));
+                            break;
+                        case Data.RawCondition.GtFloat gtFloat:
+                            andTerms.And(layer.FloatParameter(gtFloat.Parameter).IsGreaterThan(gtFloat.Value));
+                            break;
+                        case Data.RawCondition.LeFloat leFloat:
+                            andTerms.And(layer.FloatParameter(leFloat.Parameter).IsLessThan(leFloat.Value));
+                            break;
+                        default:
+                            throw new DeclavatarInternalException("Invalid LayerCondition deserialization object");
                     }
                 }
             }
@@ -511,8 +527,8 @@ namespace KusakaFactory.Declavatar
                 .Select((pd) => new ParameterConfig
                 {
                     nameOrPrefix = pd.Name,
-                    syncType = pd.ConvertToMASyncType(),
-                    defaultValue = pd.ValueType.ConvertToVRCParameterValue(),
+                    syncType = Data.VRChatExtension.ConvertToMASyncType(pd),
+                    defaultValue = Data.VRChatExtension.ConvertToVRCParameterValue(pd.ValueType),
                     saved = pd.Scope.Save ?? false,
                     localOnly = pd.Scope.Type != "Synced",
                     internalParameter = false, // never rename
@@ -543,27 +559,27 @@ namespace KusakaFactory.Declavatar
                 rootMenuItem.AddComponent<ModularAvatarMenuGroup>();
             }
 
-            foreach (var item in _declavatarDefinition.TopMenuGroup.Items)
+            foreach (var item in _declavatarDefinition.MenuItems)
             {
                 GameObject menuItem;
                 switch (item)
                 {
-                    case ExMenuItem.ExMenuGroup submenu:
+                    case Data.MenuItem.SubMenu submenu:
                         menuItem = GenerateMenuGroupObject(submenu);
                         break;
-                    case ExMenuItem.Button button:
+                    case Data.MenuItem.Button button:
                         menuItem = GenerateMenuButtonObject(button);
                         break;
-                    case ExMenuItem.Toggle toggle:
+                    case Data.MenuItem.Toggle toggle:
                         menuItem = GenerateMenuToggleObject(toggle);
                         break;
-                    case ExMenuItem.Radial radial:
+                    case Data.MenuItem.Radial radial:
                         menuItem = GenerateMenuRadialObject(radial);
                         break;
-                    case ExMenuItem.TwoAxis twoAxis:
+                    case Data.MenuItem.TwoAxis twoAxis:
                         menuItem = GenerateMenuTwoAxisObject(twoAxis);
                         break;
-                    case ExMenuItem.FourAxis fourAxis:
+                    case Data.MenuItem.FourAxis fourAxis:
                         menuItem = GenerateMenuFourAxisObject(fourAxis);
                         break;
                     default:
@@ -575,37 +591,37 @@ namespace KusakaFactory.Declavatar
             rootMenuItem.transform.parent = _rootGameObject.transform.transform;
         }
 
-        private GameObject GenerateMenuGroupObject(ExMenuItem.ExMenuGroup group)
+        private GameObject GenerateMenuGroupObject(Data.MenuItem.SubMenu submenu)
         {
-            var menuGroupRoot = new GameObject(group.Name);
+            var menuGroupRoot = new GameObject(submenu.Name);
             var menuItemComponent = menuGroupRoot.AddComponent<ModularAvatarMenuItem>();
             menuItemComponent.MenuSource = SubmenuSource.Children;
 
             var control = menuItemComponent.Control;
             control.type = VRCExpressionsMenu.Control.ControlType.SubMenu;
-            control.name = group.Name;
+            control.name = submenu.Name;
 
-            foreach (var item in group.Items)
+            foreach (var item in submenu.Items)
             {
                 GameObject menuItem;
                 switch (item)
                 {
-                    case ExMenuItem.ExMenuGroup submenu:
-                        menuItem = GenerateMenuGroupObject(submenu);
+                    case Data.MenuItem.SubMenu submenu2:
+                        menuItem = GenerateMenuGroupObject(submenu2);
                         break;
-                    case ExMenuItem.Button button:
+                    case Data.MenuItem.Button button:
                         menuItem = GenerateMenuButtonObject(button);
                         break;
-                    case ExMenuItem.Toggle toggle:
+                    case Data.MenuItem.Toggle toggle:
                         menuItem = GenerateMenuToggleObject(toggle);
                         break;
-                    case ExMenuItem.Radial radial:
+                    case Data.MenuItem.Radial radial:
                         menuItem = GenerateMenuRadialObject(radial);
                         break;
-                    case ExMenuItem.TwoAxis twoAxis:
+                    case Data.MenuItem.TwoAxis twoAxis:
                         menuItem = GenerateMenuTwoAxisObject(twoAxis);
                         break;
-                    case ExMenuItem.FourAxis fourAxis:
+                    case Data.MenuItem.FourAxis fourAxis:
                         menuItem = GenerateMenuFourAxisObject(fourAxis);
                         break;
                     default:
@@ -617,7 +633,7 @@ namespace KusakaFactory.Declavatar
             return menuGroupRoot;
         }
 
-        private GameObject GenerateMenuButtonObject(ExMenuItem.Button button)
+        private GameObject GenerateMenuButtonObject(Data.MenuItem.Button button)
         {
             var menuItemObject = new GameObject(button.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -626,12 +642,12 @@ namespace KusakaFactory.Declavatar
             control.type = VRCExpressionsMenu.Control.ControlType.Button;
             control.name = button.Name;
             control.parameter = new VRCExpressionsMenu.Control.Parameter { name = button.Parameter };
-            control.value = button.Value.ConvertToVRCParameterValue();
+            control.value = Data.VRChatExtension.ConvertToVRCParameterValue(button.Value);
 
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuToggleObject(ExMenuItem.Toggle toggle)
+        private GameObject GenerateMenuToggleObject(Data.MenuItem.Toggle toggle)
         {
             var menuItemObject = new GameObject(toggle.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -640,12 +656,12 @@ namespace KusakaFactory.Declavatar
             control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
             control.name = toggle.Name;
             control.parameter = new VRCExpressionsMenu.Control.Parameter { name = toggle.Parameter };
-            control.value = toggle.Value.ConvertToVRCParameterValue();
+            control.value = Data.VRChatExtension.ConvertToVRCParameterValue(toggle.Value);
 
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuRadialObject(ExMenuItem.Radial radial)
+        private GameObject GenerateMenuRadialObject(Data.MenuItem.Radial radial)
         {
             var menuItemObject = new GameObject(radial.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -665,7 +681,7 @@ namespace KusakaFactory.Declavatar
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuTwoAxisObject(ExMenuItem.TwoAxis twoAxis)
+        private GameObject GenerateMenuTwoAxisObject(Data.MenuItem.TwoAxis twoAxis)
         {
             var menuItemObject = new GameObject(twoAxis.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -689,7 +705,7 @@ namespace KusakaFactory.Declavatar
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuFourAxisObject(ExMenuItem.FourAxis fourAxis)
+        private GameObject GenerateMenuFourAxisObject(Data.MenuItem.FourAxis fourAxis)
         {
             var menuItemObject = new GameObject(fourAxis.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();

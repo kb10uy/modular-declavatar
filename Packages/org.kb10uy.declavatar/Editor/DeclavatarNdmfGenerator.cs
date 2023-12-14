@@ -35,7 +35,7 @@ namespace KusakaFactory.Declavatar
                 definitionJson = declavatarPlugin.GetAvatarJson();
             }
 
-            var definition = JsonConvert.DeserializeObject<Avatar>(
+            var definition = JsonConvert.DeserializeObject<Data.Avatar>(
                 definitionJson,
                 new JsonSerializerSettings
                 {

@@ -89,21 +89,21 @@ namespace KusakaFactory.Declavatar.Data
                         return new MenuItem.SubMenu
                         {
                             Name = contentObject["name"].Value<string>(),
-                            Items = contentObject["items"].ToObject<List<MenuItem>>(),
+                            Items = contentObject["items"].ToObject<List<MenuItem>>(serializer),
                         };
                     case "Button":
                         return new MenuItem.Button
                         {
                             Name = contentObject["name"].Value<string>(),
                             Parameter = contentObject["parameter"].Value<string>(),
-                            Value = contentObject["value"].ToObject<ParameterType>(),
+                            Value = contentObject["value"].ToObject<ParameterType>(serializer),
                         };
                     case "Toggle":
                         return new MenuItem.Toggle
                         {
                             Name = contentObject["name"].Value<string>(),
                             Parameter = contentObject["parameter"].Value<string>(),
-                            Value = contentObject["value"].ToObject<ParameterType>(),
+                            Value = contentObject["value"].ToObject<ParameterType>(serializer),
                         };
                     case "Radial":
                         return new MenuItem.Radial
@@ -115,17 +115,17 @@ namespace KusakaFactory.Declavatar.Data
                         return new MenuItem.TwoAxis
                         {
                             Name = contentObject["name"].Value<string>(),
-                            HorizontalAxis = contentObject["horizontal_axis"].ToObject<MenuItem.BiAxis>(),
-                            VerticalAxis = contentObject["vertical_axis"].ToObject<MenuItem.BiAxis>(),
+                            HorizontalAxis = contentObject["horizontal_axis"].ToObject<MenuItem.BiAxis>(serializer),
+                            VerticalAxis = contentObject["vertical_axis"].ToObject<MenuItem.BiAxis>(serializer),
                         };
                     case "FourAxis":
                         return new MenuItem.FourAxis
                         {
                             Name = contentObject["name"].Value<string>(),
-                            UpAxis = contentObject["up_axis"].ToObject<MenuItem.UniAxis>(),
-                            DownAxis = contentObject["down_axis"].ToObject<MenuItem.UniAxis>(),
-                            LeftAxis = contentObject["left_axis"].ToObject<MenuItem.UniAxis>(),
-                            RightAxis = contentObject["right_axis"].ToObject<MenuItem.UniAxis>(),
+                            UpAxis = contentObject["up_axis"].ToObject<MenuItem.UniAxis>(serializer),
+                            DownAxis = contentObject["down_axis"].ToObject<MenuItem.UniAxis>(serializer),
+                            LeftAxis = contentObject["left_axis"].ToObject<MenuItem.UniAxis>(serializer),
+                            RightAxis = contentObject["right_axis"].ToObject<MenuItem.UniAxis>(serializer),
                         };
                     default: throw new JsonException("invalid group type");
                 }

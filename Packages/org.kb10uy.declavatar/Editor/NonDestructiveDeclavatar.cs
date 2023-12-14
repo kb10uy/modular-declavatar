@@ -476,12 +476,12 @@ namespace KusakaFactory.Declavatar
         {
             foreach (var target in control.Targets)
             {
-                state.TrackingSets(
-                    Data.VRChatExtension.ConvertToAacTarget(target),
-                    control.AnimationDesired ?
-                        VRC_AnimatorTrackingControl.TrackingType.Animation :
-                        VRC_AnimatorTrackingControl.TrackingType.Tracking
-                );
+                if (control.AnimationDesired) {
+                    Debug.Log($"Animating {target}");
+                    state.TrackingAnimates(Data.VRChatExtension.ConvertToAacTarget(target));
+                } else {
+                    state.TrackingTracks(Data.VRChatExtension.ConvertToAacTarget(target));
+                }
             }
         }
 

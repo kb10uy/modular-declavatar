@@ -4,6 +4,7 @@ using System.Linq;
 using nadena.dev.modular_avatar.core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace KusakaFactory.Declavatar.Data
 {
@@ -258,7 +259,7 @@ namespace KusakaFactory.Declavatar.Data
                     case "BlendTree":
                         var ty = content["blend_type"].Value<string>();
                         var parameters = content["params"].Values<string>().ToList();
-                        var fields = content["fields"].ToArray().Select((jt) => jt.ToObject<RawBlendTreeField>()).ToList();
+                        var fields = content["fields"].ToArray().Select((jt) => jt.ToObject<RawBlendTreeField>(serializer)).ToList();
                         return new RawAnimation.BlendTree
                         {
                             BlendType = ty,
@@ -355,8 +356,8 @@ namespace KusakaFactory.Declavatar.Data
                     case "Shape": return new Target.Shape { Mesh = content["mesh"].Value<string>(), Name = content["shape"].Value<string>(), Value = content["value"].Value<float>(), };
                     case "Object": return new Target.Object { Name = content["object"].Value<string>(), Enabled = content["value"].Value<bool>() };
                     case "Material": return new Target.Material { Mesh = content["mesh"].Value<string>(), Slot = content["index"].Value<uint>(), AssetKey = content["asset"].Value<string>() };
-                    case "ParameterDrive": return new Target.Drive { ParameterDrive = content.ToObject<ParameterDrive>() };
-                    case "TrackingControl": return new Target.Tracking { Control = content.ToObject<TrackingControl>() };
+                    case "ParameterDrive": return new Target.Drive { ParameterDrive = content.ToObject<ParameterDrive>(serializer) };
+                    case "TrackingControl": return new Target.Tracking { Control = content.ToObject<TrackingControl>(serializer) };
                     default: throw new JsonException("invalid driver type");
                 }
             }

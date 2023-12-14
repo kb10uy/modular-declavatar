@@ -6,7 +6,7 @@ using KusakaFactory.Declavatar.Runtime;
 namespace KusakaFactory.Declavatar.EditorExtension
 {
     [CustomEditor(typeof(ExternalAsset))]
-    public sealed class ExternalAssetInspector : UnityEditor.Editor
+    public sealed class ExternalAssetInspector : Editor
     {
         private SerializedProperty _animationsProperty;
         private SerializedProperty _materialsProperty;

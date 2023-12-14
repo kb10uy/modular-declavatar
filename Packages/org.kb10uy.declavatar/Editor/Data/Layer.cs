@@ -16,7 +16,7 @@ namespace KusakaFactory.Declavatar.Data
         public sealed class GroupLayer
         {
             public string Parameter { get; set; }
-            public List<Target> DefaultTargets { get; set; }
+            public GroupOption Default { get; set; }
             public List<GroupOption> Options { get; set; }
         }
 
@@ -347,9 +347,9 @@ namespace KusakaFactory.Declavatar.Data
                 var content = obj["content"] as JObject;
                 switch (type)
                 {
-                    case "Shape": return new Target.Shape { Mesh = content["mesh"].Value<string>(), Name = content["name"].Value<string>(), Value = content["value"].Value<float>(), };
-                    case "Object": return new Target.Object { Name = content["name"].Value<string>(), Enabled = content["enabled"].Value<bool>() };
-                    case "Material": return new Target.Material { Mesh = content["mesh"].Value<string>(), Slot = content["slot"].Value<uint>(), AssetKey = content["asset_key"].Value<string>() };
+                    case "Shape": return new Target.Shape { Mesh = content["mesh"].Value<string>(), Name = content["shape"].Value<string>(), Value = content["value"].Value<float>(), };
+                    case "Object": return new Target.Object { Name = content["object"].Value<string>(), Enabled = content["value"].Value<bool>() };
+                    case "Material": return new Target.Material { Mesh = content["mesh"].Value<string>(), Slot = content["index"].Value<uint>(), AssetKey = content["asset"].Value<string>() };
                     case "ParameterDrive": return new Target.Drive { ParameterDrive = content["mesh"].ToObject<ParameterDrive>() };
                     default: throw new JsonException("invalid driver type");
                 }

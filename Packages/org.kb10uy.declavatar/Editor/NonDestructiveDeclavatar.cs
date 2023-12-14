@@ -189,7 +189,7 @@ namespace KusakaFactory.Declavatar
             var layerParameter = layer.IntParameter(g.Parameter);
 
             var idleClip = _ndmfAac.NewClip($"sg-{name}-0");
-            foreach (var target in g.DefaultTargets)
+            foreach (var target in g.Default.Targets)
             {
                 try
                 {

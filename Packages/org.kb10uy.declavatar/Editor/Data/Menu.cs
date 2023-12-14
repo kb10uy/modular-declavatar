@@ -85,12 +85,48 @@ namespace KusakaFactory.Declavatar.Data
                 var contentObject = obj["content"] as JObject;
                 switch (obj["type"].Value<string>())
                 {
-                    case "SubMenu": return contentObject.ToObject<MenuItem.SubMenu>(serializer);
-                    case "Button": return contentObject.ToObject<MenuItem.Button>(serializer);
-                    case "Toggle": return contentObject.ToObject<MenuItem.Toggle>(serializer);
-                    case "Radial": return contentObject.ToObject<MenuItem.Radial>(serializer);
-                    case "TwoAxis": return contentObject.ToObject<MenuItem.TwoAxis>(serializer);
-                    case "FourAxis": return contentObject.ToObject<MenuItem.FourAxis>(serializer);
+                    case "SubMenu":
+                        return new MenuItem.SubMenu
+                        {
+                            Name = contentObject["name"].Value<string>(),
+                            Items = contentObject["items"].ToObject<List<MenuItem>>(),
+                        };
+                    case "Button":
+                        return new MenuItem.Button
+                        {
+                            Name = contentObject["name"].Value<string>(),
+                            Parameter = contentObject["parameter"].Value<string>(),
+                            Value = contentObject["value"].ToObject<ParameterType>(),
+                        };
+                    case "Toggle":
+                        return new MenuItem.Toggle
+                        {
+                            Name = contentObject["name"].Value<string>(),
+                            Parameter = contentObject["parameter"].Value<string>(),
+                            Value = contentObject["value"].ToObject<ParameterType>(),
+                        };
+                    case "Radial":
+                        return new MenuItem.Radial
+                        {
+                            Name = contentObject["name"].Value<string>(),
+                            Parameter = contentObject["parameter"].Value<string>(),
+                        };
+                    case "TwoAxis":
+                        return new MenuItem.TwoAxis
+                        {
+                            Name = contentObject["name"].Value<string>(),
+                            HorizontalAxis = contentObject["horizontal_axis"].ToObject<MenuItem.BiAxis>(),
+                            VerticalAxis = contentObject["vertical_axis"].ToObject<MenuItem.BiAxis>(),
+                        };
+                    case "FourAxis":
+                        return new MenuItem.FourAxis
+                        {
+                            Name = contentObject["name"].Value<string>(),
+                            UpAxis = contentObject["up_axis"].ToObject<MenuItem.UniAxis>(),
+                            DownAxis = contentObject["down_axis"].ToObject<MenuItem.UniAxis>(),
+                            LeftAxis = contentObject["left_axis"].ToObject<MenuItem.UniAxis>(),
+                            RightAxis = contentObject["right_axis"].ToObject<MenuItem.UniAxis>(),
+                        };
                     default: throw new JsonException("invalid group type");
                 }
             }

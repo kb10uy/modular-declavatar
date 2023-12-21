@@ -89,81 +89,13 @@ namespace KusakaFactory.Declavatar
             var layer = controller.NewLayer(name);
             var layerParameter = layer.IntParameter(g.Parameter);
 
-            var idleClip = _ndmfAac.NewClip($"sg-{name}-0");
-            var idleState = layer.NewState("Disabled", 0, 0).WithAnimation(idleClip);
-            foreach (var target in g.Default.Targets)
-            {
-                try
-                {
-                    switch (target)
-                    {
-                        case Data.Target.Shape shape:
-                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                            idleClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                            break;
-                        case Data.Target.Object obj:
-                            var go = _searcher.FindGameObject(obj.Name);
-                            idleClip.Toggling(go, obj.Enabled);
-                            break;
-                        case Data.Target.Material material:
-                            var mr = _searcher.FindRenderer(material.Mesh);
-                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                            idleClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                            break;
-                        case Data.Target.Drive drive:
-                            AppendStateParameterDrive(layer, idleState, drive.ParameterDrive);
-                            break;
-                        case Data.Target.Tracking control:
-                            AppendStateTrackingControl(idleState, control.Control);
-                            break;
-                        default:
-                            throw new DeclavatarException("Invalid Target deserialization object");
-                    }
-                }
-                catch (DeclavatarRuntimeException ex)
-                {
-                    LogRuntimeError(ex.Message);
-                }
-            }
+            var idleState = layer.NewState("Disabled", 0, 0);
+            WriteStateAnimation(layer, idleState, g.Default.Animation);
 
             foreach (var option in g.Options)
             {
-                var clip = _ndmfAac.NewClip($"sg-{name}-{option.Value}");
-                var state = layer.NewState($"{option.Value} {option.Name}", (int)option.Value / 8 + 1, (int)option.Value % 8).WithAnimation(clip);
-                foreach (var target in option.Targets)
-                {
-                    try
-                    {
-                        switch (target)
-                        {
-                            case Data.Target.Shape shape:
-                                var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                                clip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                                break;
-                            case Data.Target.Object obj:
-                                var go = _searcher.FindGameObject(obj.Name);
-                                clip.Toggling(go, obj.Enabled);
-                                break;
-                            case Data.Target.Material material:
-                                var mr = _searcher.FindRenderer(material.Mesh);
-                                var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                                clip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                                break;
-                            case Data.Target.Drive drive:
-                                AppendStateParameterDrive(layer, state, drive.ParameterDrive);
-                                break;
-                            case Data.Target.Tracking control:
-                                AppendStateTrackingControl(state, control.Control);
-                                break;
-                            default:
-                                throw new DeclavatarException("Invalid Target deserialization object");
-                        }
-                    }
-                    catch (DeclavatarRuntimeException ex)
-                    {
-                        LogRuntimeError(ex.Message);
-                    }
-                }
+                var state = layer.NewState($"{option.Value} {option.Name}", (int)option.Value / 8 + 1, (int)option.Value % 8);
+                WriteStateAnimation(layer, state, option.Animation);
                 idleState.TransitionsTo(state).When(layerParameter.IsEqualTo((int)option.Value));
                 state.Exits().When(layerParameter.IsNotEqualTo((int)option.Value));
             }
@@ -174,78 +106,11 @@ namespace KusakaFactory.Declavatar
             var layer = controller.NewLayer(name);
             var layerParameter = layer.BoolParameter(s.Parameter);
 
-            var disabledClip = _ndmfAac.NewClip($"ss-{name}-disabled");
-            var enabledClip = _ndmfAac.NewClip($"ss-{name}-enabled");
-            var disabledState = layer.NewState("Disabled").WithAnimation(disabledClip);
-            var enabledState = layer.NewState("Enabled").WithAnimation(enabledClip);
-            foreach (var target in s.Disabled)
-            {
-                try
-                {
-                    switch (target)
-                    {
-                        case Data.Target.Shape shape:
-                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                            disabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                            break;
-                        case Data.Target.Object obj:
-                            var go = _searcher.FindGameObject(obj.Name);
-                            disabledClip.Toggling(go, obj.Enabled);
-                            break;
-                        case Data.Target.Material material:
-                            var mr = _searcher.FindRenderer(material.Mesh);
-                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                            disabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                            break;
-                        case Data.Target.Drive drive:
-                            AppendStateParameterDrive(layer, disabledState, drive.ParameterDrive);
-                            break;
-                        case Data.Target.Tracking control:
-                            AppendStateTrackingControl(disabledState, control.Control);
-                            break;
-                        default:
-                            throw new DeclavatarException("Invalid Target deserialization object");
-                    }
-                }
-                catch (DeclavatarRuntimeException ex)
-                {
-                    LogRuntimeError(ex.Message);
-                }
-            }
-            foreach (var target in s.Enabled)
-            {
-                try
-                {
-                    switch (target)
-                    {
-                        case Data.Target.Shape shape:
-                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
-                            enabledClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
-                            break;
-                        case Data.Target.Object obj:
-                            var go = _searcher.FindGameObject(obj.Name);
-                            enabledClip.Toggling(go, obj.Enabled);
-                            break;
-                        case Data.Target.Material material:
-                            var mr = _searcher.FindRenderer(material.Mesh);
-                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
-                            enabledClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
-                            break;
-                        case Data.Target.Drive drive:
-                            AppendStateParameterDrive(layer, enabledState, drive.ParameterDrive);
-                            break;
-                        case Data.Target.Tracking control:
-                            AppendStateTrackingControl(enabledState, control.Control);
-                            break;
-                        default:
-                            throw new DeclavatarException("Invalid Target deserialization object");
-                    }
-                }
-                catch (DeclavatarRuntimeException ex)
-                {
-                    LogRuntimeError(ex.Message);
-                }
-            }
+            var disabledState = layer.NewState("Disabled");
+            var enabledState = layer.NewState("Enabled");
+
+            WriteStateAnimation(layer, disabledState, s.Disabled);
+            WriteStateAnimation(layer, enabledState, s.Enabled);
 
             disabledState.TransitionsTo(enabledState).When(layerParameter.IsTrue());
             enabledState.TransitionsTo(disabledState).When(layerParameter.IsFalse());
@@ -256,59 +121,8 @@ namespace KusakaFactory.Declavatar
             var layer = controller.NewLayer(name);
             var layerParameter = layer.FloatParameter(puppet.Parameter);
 
-            var groups = puppet.Keyframes
-                .SelectMany((kf) => kf.Targets.Select((t) => (kf.Value, Target: t)))
-                .GroupBy((p) => Data.VRChatExtension.AsGroupingKey(p.Target));
-
-            var clip = _ndmfAac.NewClip($"p-{name}").NonLooping();
-            clip.Animating((e) =>
-            {
-                foreach (var group in groups)
-                {
-                    try
-                    {
-                        if (group.Key.StartsWith("s://"))
-                        {
-                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Shape)).ToList();
-                            var smr = _searcher.FindSkinnedMeshRenderer(points[0].Target.Mesh);
-                            e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
-                            {
-                                foreach (var point in points) kfs.Linear(point.Value * 100.0f, point.Target.Value * 100.0f);
-                            });
-                        }
-                        else if (group.Key.StartsWith("o://"))
-                        {
-                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Object)).ToList();
-                            var go = _searcher.FindGameObject(points[0].Target.Name);
-                            e.Animates(go).WithFrameCountUnit((kfs) =>
-                            {
-                                foreach (var point in points) kfs.Constant(point.Value * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
-                            });
-                        }
-                        else if (group.Key.StartsWith("m://"))
-                        {
-                            // Use traditional API for matarial swapping
-                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Material)).ToList();
-                            var mr = _searcher.FindRenderer(points[0].Target.Mesh);
-
-                            var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
-                            var keyframes = points.Select((p) => new ObjectReferenceKeyframe
-                            {
-                                time = p.Value * 100.0f,
-                                value = SearchExternalMaterial(p.Target.AssetKey),
-                            }).ToArray();
-                            AnimationUtility.SetObjectReferenceCurve(clip.Clip, binding, keyframes);
-                        }
-                    }
-                    catch (DeclavatarRuntimeException ex)
-                    {
-                        LogRuntimeError(ex.Message);
-                    }
-                }
-            });
-
-            var state = layer.NewState(name).WithAnimation(clip);
-            state.MotionTime(layerParameter);
+            var state = layer.NewState(name).MotionTime(layerParameter);
+            WriteStateAnimation(layer, state, puppet.Animation);
         }
 
         private void GenerateRawLayer(AacFlController controller, string name, Data.Layer.RawLayer rawLayer)
@@ -324,7 +138,7 @@ namespace KusakaFactory.Declavatar
                 switch (agState.Animation)
                 {
                     case Data.RawAnimation.Clip clip:
-                        state.WithAnimation(SearchExternalAnimationClip(clip.Name));
+                        WriteStateAnimation(layer, state, clip.Animation);
                         if (clip.Speed != null)
                         {
                             var speedParameter = layer.FloatParameter(clip.SpeedBy);
@@ -345,8 +159,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameter = blendTree.Parameters[0];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
-                                    tree.AddChild(fieldAnimation, field.Position[0]);
+                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), field.Position[0]);
                                 }
                                 break;
                             case "Simple2D":
@@ -355,8 +168,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
-                                    tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
+                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
                             case "Freeform2D":
@@ -365,8 +177,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
-                                    tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
+                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
                             case "Cartesian2D":
@@ -375,8 +186,7 @@ namespace KusakaFactory.Declavatar
                                 tree.blendParameterY = blendTree.Parameters[1];
                                 foreach (var field in blendTree.Fields)
                                 {
-                                    var fieldAnimation = SearchExternalAnimationClip(field.Name);
-                                    tree.AddChild(fieldAnimation, new Vector2(field.Position[0], field.Position[1]));
+                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
                                 }
                                 break;
                             default:
@@ -386,6 +196,7 @@ namespace KusakaFactory.Declavatar
                         break;
                 }
             }
+
 
             // Set transitions
             foreach (var transition in rawLayer.Transitions)
@@ -429,6 +240,161 @@ namespace KusakaFactory.Declavatar
             }
         }
 
+        private AnimationClip FetchAnimationClipForBlendTree(Data.LayerAnimation animation)
+        {
+            switch (animation)
+            {
+                case Data.LayerAnimation.Inline inline:
+                    return CreateInlineClip(inline).Clip;
+                case Data.LayerAnimation.KeyedInline keyedInline:
+                    return CreateKeyedInlineClip(keyedInline).Clip;
+                case Data.LayerAnimation.External external:
+                    return SearchExternalAnimationClip(external.Name);
+                default:
+                    throw new DeclavatarInternalException("Invalid LayerAnimation");
+            }
+        }
+
+        private void WriteStateAnimation(AacFlLayer layer, AacFlState state, Data.LayerAnimation animation)
+        {
+            switch (animation)
+            {
+                case Data.LayerAnimation.Inline inline:
+                    state.WithAnimation(CreateInlineClip(inline));
+                    AppendPerState(layer, state, inline.Targets);
+                    break;
+                case Data.LayerAnimation.KeyedInline keyedInline:
+                    state.WithAnimation(CreateKeyedInlineClip(keyedInline));
+                    break;
+                case Data.LayerAnimation.External external:
+                    state.WithAnimation(SearchExternalAnimationClip(external.Name));
+                    break;
+                default:
+                    throw new DeclavatarInternalException("Invalid LayerAnimation");
+            }
+        }
+
+        private AacFlClip CreateInlineClip(Data.LayerAnimation.Inline inline)
+        {
+            var inlineClip = _ndmfAac.NewClip();
+            foreach (var target in inline.Targets)
+            {
+                try
+                {
+                    switch (target)
+                    {
+                        case Data.Target.Shape shape:
+                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
+                            inlineClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
+                            break;
+                        case Data.Target.Object obj:
+                            var go = _searcher.FindGameObject(obj.Name);
+                            inlineClip.Toggling(go, obj.Enabled);
+                            break;
+                        case Data.Target.Material material:
+                            var mr = _searcher.FindRenderer(material.Mesh);
+                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
+                            inlineClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
+                            break;
+                        case Data.Target.Drive _:
+                        case Data.Target.Tracking _:
+                            continue;
+                        default:
+                            throw new DeclavatarException("Invalid Target deserialization object");
+                    }
+                }
+                catch (DeclavatarRuntimeException ex)
+                {
+                    LogRuntimeError(ex.Message);
+                }
+            }
+
+            return inlineClip;
+        }
+
+        private AacFlClip CreateKeyedInlineClip(Data.LayerAnimation.KeyedInline keyedInline)
+        {
+            var groups = keyedInline.Keyframes
+                .SelectMany((kf) => kf.Targets.Select((t) => (kf.Value, Target: t)))
+                .GroupBy((p) => Data.VRChatExtension.AsGroupingKey(p.Target));
+            var keyedInlineClip = _ndmfAac.NewClip().NonLooping();
+            keyedInlineClip.Animating((e) =>
+            {
+                foreach (var group in groups)
+                {
+                    try
+                    {
+                        if (group.Key.StartsWith("shape://"))
+                        {
+                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Shape)).ToList();
+                            var smr = _searcher.FindSkinnedMeshRenderer(points[0].Target.Mesh);
+                            e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
+                            {
+                                foreach (var point in points) kfs.Linear(point.Value * 100.0f, point.Target.Value * 100.0f);
+                            });
+                        }
+                        else if (group.Key.StartsWith("object://"))
+                        {
+                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Object)).ToList();
+                            var go = _searcher.FindGameObject(points[0].Target.Name);
+                            e.Animates(go).WithFrameCountUnit((kfs) =>
+                            {
+                                foreach (var point in points) kfs.Constant(point.Value * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
+                            });
+                        }
+                        else if (group.Key.StartsWith("material://"))
+                        {
+                            // Use traditional API for matarial swapping
+                            var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Material)).ToList();
+                            var mr = _searcher.FindRenderer(points[0].Target.Mesh);
+
+                            var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
+                            var keyframes = points.Select((p) => new ObjectReferenceKeyframe
+                            {
+                                time = p.Value * 100.0f,
+                                value = SearchExternalMaterial(p.Target.AssetKey),
+                            }).ToArray();
+                            AnimationUtility.SetObjectReferenceCurve(keyedInlineClip.Clip, binding, keyframes);
+                        }
+                    }
+                    catch (DeclavatarRuntimeException ex)
+                    {
+                        LogRuntimeError(ex.Message);
+                    }
+                }
+            });
+            return keyedInlineClip;
+        }
+
+        private void AppendPerState(AacFlLayer layer, AacFlState state, IReadOnlyList<Data.Target> targets)
+        {
+            foreach (var target in targets)
+            {
+                try
+                {
+                    switch (target)
+                    {
+                        case Data.Target.Shape _:
+                        case Data.Target.Object _:
+                        case Data.Target.Material _:
+                            continue;
+                        case Data.Target.Drive drive:
+                            AppendStateParameterDrive(layer, state, drive.ParameterDrive);
+                            break;
+                        case Data.Target.Tracking control:
+                            AppendStateTrackingControl(state, control.Control);
+                            break;
+                        default:
+                            throw new DeclavatarException("Invalid Target deserialization object");
+                    }
+                }
+                catch (DeclavatarRuntimeException ex)
+                {
+                    LogRuntimeError(ex.Message);
+                }
+            }
+        }
+
         private void AppendStateParameterDrive(AacFlLayer layer, AacFlState state, Data.ParameterDrive drive)
         {
             switch (drive)
@@ -468,13 +434,13 @@ namespace KusakaFactory.Declavatar
 
         private void AppendStateTrackingControl(AacFlState state, Data.TrackingControl control)
         {
-            foreach (var target in control.Targets)
+            if (control.AnimationDesired)
             {
-                if (control.AnimationDesired) {
-                    state.TrackingAnimates(Data.VRChatExtension.ConvertToAacTarget(target));
-                } else {
-                    state.TrackingTracks(Data.VRChatExtension.ConvertToAacTarget(target));
-                }
+                state.TrackingAnimates(Data.VRChatExtension.ConvertToAacTarget(control.Target));
+            }
+            else
+            {
+                state.TrackingTracks(Data.VRChatExtension.ConvertToAacTarget(control.Target));
             }
         }
 

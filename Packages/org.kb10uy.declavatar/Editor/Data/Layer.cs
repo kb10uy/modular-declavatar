@@ -25,20 +25,20 @@ namespace KusakaFactory.Declavatar.Data
         {
             public string Name { get; set; }
             public uint Value { get; set; }
-            public List<Target> Targets { get; set; }
+            public LayerAnimation Animation { get; set; }
         }
 
         public sealed class SwitchLayer
         {
             public string Parameter { get; set; }
-            public List<Target> Disabled { get; set; }
-            public List<Target> Enabled { get; set; }
+            public LayerAnimation Disabled { get; set; }
+            public LayerAnimation Enabled { get; set; }
         }
 
         public sealed class PuppetLayer
         {
             public string Parameter { get; set; }
-            public List<PuppetKeyframe> Keyframes { get; set; }
+            public LayerAnimation Animation { get; set; }
         }
 
         public sealed class PuppetKeyframe
@@ -69,12 +69,31 @@ namespace KusakaFactory.Declavatar.Data
         }
     }
 
+    [JsonConverter(typeof(Converters.LayerAnimationConverter))]
+    public abstract class LayerAnimation
+    {
+        public sealed class Inline : LayerAnimation
+        {
+            public List<Target> Targets { get; set; }
+        }
+
+        public sealed class KeyedInline : LayerAnimation
+        {
+            public List<Layer.PuppetKeyframe> Keyframes { get; set; }
+        }
+
+        public sealed class External : LayerAnimation
+        {
+            public string Name { get; set; }
+        }
+    }
+
     [JsonConverter(typeof(Converters.RawAnimationConverter))]
     public abstract class RawAnimation
     {
         public sealed class Clip : RawAnimation
         {
-            public string Name { get; set; }
+            public LayerAnimation Animation { get; set; }
             public float? Speed { get; set; }
             public string SpeedBy { get; set; }
             public string TimeBy { get; set; }
@@ -91,7 +110,7 @@ namespace KusakaFactory.Declavatar.Data
     [JsonConverter(typeof(Converters.LayerBlendTreeFieldConverter))]
     public sealed class RawBlendTreeField
     {
-        public string Name { get; set; }
+        public LayerAnimation Animation { get; set; }
         public float[] Position { get; set; }
     }
 
@@ -230,6 +249,39 @@ namespace KusakaFactory.Declavatar.Data
             }
         }
 
+        public sealed class LayerAnimationConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(LayerAnimation);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                var obj = JObject.Load(reader);
+                var type = obj["type"].Value<string>();
+                var content = obj["content"];
+                switch (type)
+                {
+                    case "Inline":
+                        var targets = content.ToArray().Select((jt) => jt.ToObject<Target>(serializer)).ToList();
+                        return new LayerAnimation.Inline { Targets = targets };
+                    case "KeyedInline":
+                        var keyframes = content.ToArray().Select((jt) => jt.ToObject<Layer.PuppetKeyframe>(serializer)).ToList();
+                        return new LayerAnimation.KeyedInline { Keyframes = keyframes };
+                    case "External":
+                        var name = content.Value<string>();
+                        return new LayerAnimation.External { Name = name };
+                    default: throw new JsonException("invalid layer animation");
+                }
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public sealed class RawAnimationConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
@@ -245,13 +297,13 @@ namespace KusakaFactory.Declavatar.Data
                 switch (type)
                 {
                     case "Clip":
-                        var name = content["name"].Value<string>();
+                        var animation = content["animation"].ToObject<LayerAnimation>(serializer);
                         var speed = content["speed"].Value<float?>();
                         var speed_by = content["speed_by"].Value<string>();
                         var time_by = content["time_by"].Value<string>();
                         return new RawAnimation.Clip
                         {
-                            Name = name,
+                            Animation = animation,
                             Speed = speed,
                             SpeedBy = speed_by,
                             TimeBy = time_by,
@@ -286,9 +338,9 @@ namespace KusakaFactory.Declavatar.Data
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
                 var obj = JObject.Load(reader);
-                var name = obj["name"].Value<string>();
+                var animation = obj["animation"].ToObject<LayerAnimation>(serializer);
                 var position = obj["position"].Values<float>().ToArray();
-                return new RawBlendTreeField { Name = name, Position = position };
+                return new RawBlendTreeField { Animation = animation, Position = position };
             }
 
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)

@@ -466,7 +466,8 @@ MonoBehaviour:
   Format: 1
   Definition: {fileID: 5020270461513550471, guid: 295a5d00fc954154499a7bad16b6c061,
     type: 3}
-  ExternalAssets: []
+  ExternalAssets:
+  - {fileID: 11400000, guid: 17b5e51d06e8f6b46b7d3408a5096706, type: 2}
   DeclarationRoot: {fileID: 0}
   InstallTarget: {fileID: 0}
 --- !u!4 &1908433381

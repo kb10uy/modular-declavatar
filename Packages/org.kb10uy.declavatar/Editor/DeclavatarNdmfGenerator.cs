@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using Newtonsoft.Json;
@@ -29,7 +30,7 @@ namespace KusakaFactory.Declavatar
                 foreach (var path in config.LibraryRelativePath)
                 {
                     var p = path.Trim();
-                    if (!string.IsNullOrEmpty(p)) declavatarPlugin.AddLibraryPath(path);
+                    if (!string.IsNullOrEmpty(p)) declavatarPlugin.AddLibraryPath(ConcatenateProjectRelativePath(p));
                 }
 
                 if (!declavatarPlugin.Compile(my.Definition.text, (FormatKind)(uint)my.Format))
@@ -64,6 +65,13 @@ namespace KusakaFactory.Declavatar
             );
             declavatar.Execute();
             return AacPluginOutput.Regular();
+        }
+
+        private static string ConcatenateProjectRelativePath(string relativePath)
+        {
+            var assetsPath = Application.dataPath;
+            var projectPath = Path.GetDirectoryName(assetsPath);
+            return Path.Combine(projectPath, relativePath);
         }
     }
 

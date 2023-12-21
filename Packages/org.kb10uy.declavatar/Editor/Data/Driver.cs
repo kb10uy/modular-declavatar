@@ -77,7 +77,7 @@ namespace KusakaFactory.Declavatar.Data
     public sealed class TrackingControl
     {
         public bool AnimationDesired { get; set; }
-        public List<string> Targets { get; set; }
+        public string Target { get; set; }
     }
 
     public static partial class Converters

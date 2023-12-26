@@ -63,7 +63,7 @@ namespace KusakaFactory.Declavatar
                 definition,
                 externalAssets
             );
-            declavatar.Execute();
+            declavatar.Execute(my.GenerateMenuInstaller);
             return AacPluginOutput.Regular();
         }
 

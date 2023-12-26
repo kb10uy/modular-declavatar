@@ -36,11 +36,11 @@ namespace KusakaFactory.Declavatar
             _searcher = new GameObjectSearcher(root);
         }
 
-        public void Execute()
+        public void Execute(bool generateMenuInstaller)
         {
             GenerateFXLayerNonDestructive();
             GenerateParametersNonDestructive();
-            GenerateMenuNonDestructive();
+            GenerateMenuNonDestructive(generateMenuInstaller);
         }
 
         private void GenerateFXLayerNonDestructive()
@@ -450,9 +450,14 @@ namespace KusakaFactory.Declavatar
 
         private void GenerateParametersNonDestructive()
         {
-            var parameterObject = new GameObject("DeclavatarParameters");
-            var parametersComponent = parameterObject.AddComponent<ModularAvatarParameters>();
-            parametersComponent.parameters = _declavatarDefinition.Parameters
+            // MA Parameters modifies itself and child GameObject
+            // It must be on _rootGameObject
+            var parametersComponent =
+                _rootGameObject.GetComponent<ModularAvatarParameters>() ??
+                _rootGameObject.AddComponent<ModularAvatarParameters>();
+
+            var newParameters = _declavatarDefinition
+                .Parameters
                 .Select((pd) => new ParameterConfig
                 {
                     nameOrPrefix = pd.Name,
@@ -460,33 +465,26 @@ namespace KusakaFactory.Declavatar
                     defaultValue = Data.VRChatExtension.ConvertToVRCParameterValue(pd.ValueType),
                     saved = pd.Scope.Save ?? false,
                     localOnly = pd.Scope.Type != "Synced",
-                    internalParameter = false, // never rename
+                    internalParameter = pd.Unique,
                     isPrefix = false, // TODO: PhysBones prefix
-                })
-                .ToList();
-
-            parameterObject.transform.parent = _rootGameObject.transform.transform;
+                });
+            parametersComponent.parameters.AddRange(newParameters);
         }
 
         #endregion
 
         #region Menu Generation
 
-        private void GenerateMenuNonDestructive()
+        private void GenerateMenuNonDestructive(bool generateMenuInstaller)
         {
-            var rootMenuItem = new GameObject("DeclavatarMenuRoot");
-            // var installer =
-            if (_installTarget != null)
+            if (_installTarget == null)
             {
-                _installTarget.AddComponent<ModularAvatarMenuInstaller>();
-                var targetingGroup = _installTarget.AddComponent<ModularAvatarMenuGroup>();
-                targetingGroup.targetObject = rootMenuItem;
+                _installTarget = new GameObject("DeclavatarMenuRoot");
+                _installTarget.transform.parent = _rootGameObject.transform.transform;
             }
-            else
-            {
-                rootMenuItem.AddComponent<ModularAvatarMenuInstaller>();
-                rootMenuItem.AddComponent<ModularAvatarMenuGroup>();
-            }
+
+            if (generateMenuInstaller) _installTarget.AddComponent<ModularAvatarMenuInstaller>();
+            _installTarget.AddComponent<ModularAvatarMenuGroup>();
 
             foreach (var item in _declavatarDefinition.MenuItems)
             {
@@ -514,10 +512,9 @@ namespace KusakaFactory.Declavatar
                     default:
                         continue;
                 }
-                menuItem.transform.parent = rootMenuItem.gameObject.transform;
+                menuItem.transform.parent = _installTarget.gameObject.transform;
             }
 
-            rootMenuItem.transform.parent = _rootGameObject.transform.transform;
         }
 
         private GameObject GenerateMenuGroupObject(Data.MenuItem.SubMenu submenu)

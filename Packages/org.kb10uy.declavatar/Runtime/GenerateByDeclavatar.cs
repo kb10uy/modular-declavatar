@@ -11,6 +11,7 @@ namespace KusakaFactory.Declavatar.Runtime
 
         public GameObject DeclarationRoot;
         public GameObject InstallTarget;
+        public bool GenerateMenuInstaller = false;
 
         public enum DeclarationFormat : uint
         {

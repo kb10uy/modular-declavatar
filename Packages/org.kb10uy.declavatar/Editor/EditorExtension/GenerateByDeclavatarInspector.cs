@@ -13,6 +13,7 @@ namespace KusakaFactory.Declavatar.EditorExtension
         private SerializedProperty _externalAssetsProperty;
         private SerializedProperty _declarationRootProperty;
         private SerializedProperty _installTargetProperty;
+        private SerializedProperty _generateMenuInstallerProperty;
 
         private ReorderableList _externalAssetsList;
 
@@ -23,6 +24,7 @@ namespace KusakaFactory.Declavatar.EditorExtension
             _externalAssetsProperty = serializedObject.FindProperty("ExternalAssets");
             _declarationRootProperty = serializedObject.FindProperty("DeclarationRoot");
             _installTargetProperty = serializedObject.FindProperty("InstallTarget");
+            _generateMenuInstallerProperty = serializedObject.FindProperty("GenerateMenuInstaller");
 
             _externalAssetsList = new ReorderableList(serializedObject, _externalAssetsProperty)
             {
@@ -53,6 +55,7 @@ namespace KusakaFactory.Declavatar.EditorExtension
 
             EditorGUILayout.PropertyField(_declarationRootProperty);
             EditorGUILayout.PropertyField(_installTargetProperty);
+            EditorGUILayout.PropertyField(_generateMenuInstallerProperty);
             _externalAssetsList.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();

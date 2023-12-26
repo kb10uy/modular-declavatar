@@ -5,6 +5,7 @@
         public string Name { get; set; }
         public ParameterType ValueType { get; set; }
         public ParameterScope Scope { get; set; }
+        public bool Unique { get; set; }
     }
 
     public sealed class ParameterType

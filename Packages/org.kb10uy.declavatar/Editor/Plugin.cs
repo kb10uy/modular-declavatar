@@ -2,6 +2,8 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Newtonsoft.Json;
+using KusakaFactory.Declavatar.Data;
 
 namespace KusakaFactory.Declavatar
 {
@@ -28,9 +30,11 @@ namespace KusakaFactory.Declavatar
         [DllImport(LIBRARY_NAME)]
         public static extern StatusCode DeclavatarGetAvatarJson(NativeHandle da, ref IntPtr json, ref uint jsonLength);
         [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarGetErrorsCount(NativeHandle da, ref uint errors);
+        public static extern StatusCode DeclavatarGetLogsCount(NativeHandle da, ref uint errors);
         [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarGetError(NativeHandle da, uint index, ref uint errorKind, ref IntPtr message, ref uint messageLength);
+        public static extern StatusCode DeclavatarGetLogJson(NativeHandle da, uint index, ref IntPtr message, ref uint messageLength);
+        [DllImport(LIBRARY_NAME)]
+        public static extern StatusCode DeclavatarGetI18n(ref byte i18nKey, uint i18nKeyLength, ref IntPtr i18nJson, ref uint i18nJsonLength);
     }
 
     internal enum StatusCode : uint
@@ -129,27 +133,41 @@ namespace KusakaFactory.Declavatar
             return jsonString;
         }
 
-        public List<(ErrorKind, string)> FetchErrors()
+        public List<string> FetchErrors()
         {
-            var errors = new List<(ErrorKind, string)>();
-            uint errorsCount = 0;
-            Native.DeclavatarGetErrorsCount(_handle, ref errorsCount);
+            var logs = new List<string>();
+            uint logsCount = 0;
+            Native.DeclavatarGetLogsCount(_handle, ref logsCount);
 
-            for (uint i = 0; i < errorsCount; i++)
+            for (uint i = 0; i < logsCount; i++)
             {
-                uint errorKind = 0;
-                IntPtr errorMessage = IntPtr.Zero;
-                uint errorLength = 0;
-                Native.DeclavatarGetError(_handle, i, ref errorKind, ref errorMessage, ref errorLength);
+                IntPtr logJson = IntPtr.Zero;
+                uint logJsonLength = 0;
+                Native.DeclavatarGetLogJson(_handle, i, ref logJson, ref logJsonLength);
 
-                var buffer = new byte[errorLength];
-                Marshal.Copy(errorMessage, buffer, 0, (int)errorLength);
-                var message = Encoding.UTF8.GetString(buffer);
+                var buffer = new byte[logJsonLength];
+                Marshal.Copy(logJson, buffer, 0, (int)logJsonLength);
+                var logJsonString = Encoding.UTF8.GetString(buffer);
 
-                errors.Add(((ErrorKind)errorKind, message));
+                logs.Add(logJsonString);
             }
 
-            return errors;
+            return logs;
+        }
+
+        public static Dictionary<string, string> GetLogLocalization(string locale)
+        {
+            var keyBytes = Encoding.UTF8.GetBytes($"log.{locale}");
+            IntPtr json = IntPtr.Zero;
+            uint jsonLength = 0;
+            if (Native.DeclavatarGetI18n(ref keyBytes[0], (uint)keyBytes.Length, ref json, ref jsonLength) != StatusCode.Success)
+            {
+                return null;
+            }
+            var buffer = new byte[jsonLength];
+            Marshal.Copy(json, buffer, 0, (int)jsonLength);
+            var jsonString = Encoding.UTF8.GetString(buffer);
+            return JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
         }
 
         public void Dispose()

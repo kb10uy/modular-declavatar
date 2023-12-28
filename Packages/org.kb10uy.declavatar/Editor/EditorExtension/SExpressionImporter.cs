@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text;
 using UnityEngine;
-using UnityEditor.Experimental.AssetImporters;
+using UnityEditor.AssetImporters;
 
 namespace KusakaFactory.Declavatar.EditorExtension
 {

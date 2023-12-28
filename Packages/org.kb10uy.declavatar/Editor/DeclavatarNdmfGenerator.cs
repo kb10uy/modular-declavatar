@@ -11,6 +11,7 @@ using KusakaFactory.Declavatar;
 using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
 using nadena.dev.ndmf.localization;
+using UnityEditor;
 
 
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfGenerator))]
@@ -62,6 +63,7 @@ namespace KusakaFactory.Declavatar
             var declavatar = new NonDestructiveDeclavatar(
                 my.DeclarationRoot != null ? my.DeclarationRoot : my.gameObject,
                 my.InstallTarget,
+                localizer,
                 aac,
                 definition,
                 externalAssets
@@ -99,15 +101,28 @@ namespace KusakaFactory.Declavatar
         {
             var localizations = new List<(string, Func<string, string>)>
             {
-                ("en-us", CreateLocalizerFunc(Plugin.GetLogLocalization("en-us"))),
-                ("ja-jp", CreateLocalizerFunc(Plugin.GetLogLocalization("ja-jp"))),
+                ("en-us", CreateLocalizerFunc("en-us")),
+                ("ja-jp", CreateLocalizerFunc("ja-jp")),
             };
             return new Localizer("en-us", () => localizations);
         }
 
-        private static Func<string, string> CreateLocalizerFunc(Dictionary<string, string> dictionary)
+        private static Func<string, string> CreateLocalizerFunc(string locale)
         {
-            return (key) => dictionary.TryGetValue(key, out var value) ? value : null;
+            var coreLocalization = Plugin.GetLogLocalization(locale);
+            var runtimeLocalization = GetRuntimeLocalization(locale);
+
+            var dictionary = new Dictionary<string, string>(coreLocalization.Union(runtimeLocalization));
+            return (key) =>
+            {
+                return dictionary.TryGetValue(key, out var value) ? value : null;
+            };
+        }
+
+        private static Dictionary<string, string> GetRuntimeLocalization(string locale)
+        {
+            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>($"Packages/org.kb10uy.declavatar/Editor/Localization/{locale}.json");
+            return JsonConvert.DeserializeObject<Dictionary<string, string>>(asset.text);
         }
 
         #endregion

@@ -8,8 +8,9 @@ using VRC.SDK3.Avatars.ScriptableObjects;
 using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.VRC;
 using nadena.dev.modular_avatar.core;
-using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
+using nadena.dev.ndmf;
+using nadena.dev.ndmf.localization;
 
 namespace KusakaFactory.Declavatar
 {
@@ -19,28 +20,35 @@ namespace KusakaFactory.Declavatar
         private GameObject _installTarget;
         private Data.Avatar _declavatarDefinition;
         private IReadOnlyList<ExternalAsset> _externalAssets;
+        private Localizer _localizer;
         private AacFlBase _ndmfAac;
-        private BuildLogWindow _logWindow;
 
         private GameObjectSearcher _searcher;
 
-        public NonDestructiveDeclavatar(GameObject root, GameObject installTarget, AacFlBase aac, Data.Avatar definition, IReadOnlyList<ExternalAsset> assets)
+        public NonDestructiveDeclavatar(GameObject root, GameObject installTarget, Localizer localizer, AacFlBase aac, Data.Avatar definition, IReadOnlyList<ExternalAsset> assets)
         {
             _rootGameObject = root;
             _installTarget = installTarget;
             _declavatarDefinition = definition;
             _externalAssets = assets;
+            _localizer = localizer;
             _ndmfAac = aac;
-            _logWindow = null;
 
-            _searcher = new GameObjectSearcher(root);
+            _searcher = new GameObjectSearcher(localizer, root);
         }
 
         public void Execute(bool generateMenuInstaller)
         {
-            GenerateFXLayerNonDestructive();
-            GenerateParametersNonDestructive();
-            GenerateMenuNonDestructive(generateMenuInstaller);
+            try
+            {
+                GenerateFXLayerNonDestructive();
+                GenerateParametersNonDestructive();
+                GenerateMenuNonDestructive(generateMenuInstaller);
+            }
+            catch (DeclavatarInternalException ex)
+            {
+                Debug.LogError(ex.Message);
+            }
         }
 
         private void GenerateFXLayerNonDestructive()
@@ -49,29 +57,23 @@ namespace KusakaFactory.Declavatar
 
             foreach (var animationGroup in _declavatarDefinition.FxController)
             {
-                try
+                switch (animationGroup.Content)
                 {
-                    switch (animationGroup.Content)
-                    {
-                        case Data.Layer.GroupLayer g:
-                            GenerateGroupLayer(fxAnimator, animationGroup.Name, g);
-                            break;
-                        case Data.Layer.SwitchLayer s:
-                            GenerateSwitchLayer(fxAnimator, animationGroup.Name, s);
-                            break;
-                        case Data.Layer.PuppetLayer p:
-                            GeneratePuppetLayer(fxAnimator, animationGroup.Name, p);
-                            break;
-                        case Data.Layer.RawLayer r:
-                            GenerateRawLayer(fxAnimator, animationGroup.Name, r);
-                            break;
-                        default:
-                            throw new DeclavatarException("Invalid AnimationGroup deserialization object");
-                    }
-                }
-                catch (DeclavatarAssetException ex)
-                {
-                    LogRuntimeError(ex.Message);
+                    case Data.Layer.GroupLayer g:
+                        GenerateGroupLayer(fxAnimator, animationGroup.Name, g);
+                        break;
+                    case Data.Layer.SwitchLayer s:
+                        GenerateSwitchLayer(fxAnimator, animationGroup.Name, s);
+                        break;
+                    case Data.Layer.PuppetLayer p:
+                        GeneratePuppetLayer(fxAnimator, animationGroup.Name, p);
+                        break;
+                    case Data.Layer.RawLayer r:
+                        GenerateRawLayer(fxAnimator, animationGroup.Name, r);
+                        break;
+                    default:
+                        ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_animation_group");
+                        break;
                 }
             }
 
@@ -152,45 +154,52 @@ namespace KusakaFactory.Declavatar
                         break;
                     case Data.RawAnimation.BlendTree blendTree:
                         var tree = new BlendTree();
-                        switch (blendTree.BlendType)
+                        try
                         {
-                            case "Linear":
-                                tree.blendType = BlendTreeType.Simple1D;
-                                tree.blendParameter = blendTree.Parameters[0];
-                                foreach (var field in blendTree.Fields)
-                                {
-                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), field.Position[0]);
-                                }
-                                break;
-                            case "Simple2D":
-                                tree.blendType = BlendTreeType.SimpleDirectional2D;
-                                tree.blendParameter = blendTree.Parameters[0];
-                                tree.blendParameterY = blendTree.Parameters[1];
-                                foreach (var field in blendTree.Fields)
-                                {
-                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
-                                }
-                                break;
-                            case "Freeform2D":
-                                tree.blendType = BlendTreeType.FreeformDirectional2D;
-                                tree.blendParameter = blendTree.Parameters[0];
-                                tree.blendParameterY = blendTree.Parameters[1];
-                                foreach (var field in blendTree.Fields)
-                                {
-                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
-                                }
-                                break;
-                            case "Cartesian2D":
-                                tree.blendType = BlendTreeType.FreeformCartesian2D;
-                                tree.blendParameter = blendTree.Parameters[0];
-                                tree.blendParameterY = blendTree.Parameters[1];
-                                foreach (var field in blendTree.Fields)
-                                {
-                                    tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
-                                }
-                                break;
-                            default:
-                                throw new DeclavatarInternalException($"Invalid BlendTree Type {blendTree.BlendType}");
+                            switch (blendTree.BlendType)
+                            {
+                                case "Linear":
+                                    tree.blendType = BlendTreeType.Simple1D;
+                                    tree.blendParameter = blendTree.Parameters[0];
+                                    foreach (var field in blendTree.Fields)
+                                    {
+                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), field.Position[0]);
+                                    }
+                                    break;
+                                case "Simple2D":
+                                    tree.blendType = BlendTreeType.SimpleDirectional2D;
+                                    tree.blendParameter = blendTree.Parameters[0];
+                                    tree.blendParameterY = blendTree.Parameters[1];
+                                    foreach (var field in blendTree.Fields)
+                                    {
+                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
+                                    }
+                                    break;
+                                case "Freeform2D":
+                                    tree.blendType = BlendTreeType.FreeformDirectional2D;
+                                    tree.blendParameter = blendTree.Parameters[0];
+                                    tree.blendParameterY = blendTree.Parameters[1];
+                                    foreach (var field in blendTree.Fields)
+                                    {
+                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
+                                    }
+                                    break;
+                                case "Cartesian2D":
+                                    tree.blendType = BlendTreeType.FreeformCartesian2D;
+                                    tree.blendParameter = blendTree.Parameters[0];
+                                    tree.blendParameterY = blendTree.Parameters[1];
+                                    foreach (var field in blendTree.Fields)
+                                    {
+                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
+                                    }
+                                    break;
+                                default:
+                                    ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_blendtree");
+                                    break;
+                            }
+                        }
+                        catch (DeclavatarRuntimeException)
+                        {
                         }
                         state.WithAnimation(tree);
                         break;
@@ -234,7 +243,8 @@ namespace KusakaFactory.Declavatar
                             andTerms.And(layer.FloatParameter(leFloat.Parameter).IsLessThan(leFloat.Value));
                             break;
                         default:
-                            throw new DeclavatarInternalException("Invalid LayerCondition deserialization object");
+                            ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_layer_condition");
+                            break;
                     }
                 }
             }
@@ -251,26 +261,34 @@ namespace KusakaFactory.Declavatar
                 case Data.LayerAnimation.External external:
                     return SearchExternalAnimationClip(external.Name);
                 default:
-                    throw new DeclavatarInternalException("Invalid LayerAnimation");
+                    ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_layer_animation");
+                    throw new DeclavatarInternalException("internal");
             }
         }
 
         private void WriteStateAnimation(AacFlLayer layer, AacFlState state, Data.LayerAnimation animation)
         {
-            switch (animation)
+            try
             {
-                case Data.LayerAnimation.Inline inline:
-                    state.WithAnimation(CreateInlineClip(inline));
-                    AppendPerState(layer, state, inline.Targets);
-                    break;
-                case Data.LayerAnimation.KeyedInline keyedInline:
-                    state.WithAnimation(CreateKeyedInlineClip(keyedInline));
-                    break;
-                case Data.LayerAnimation.External external:
-                    state.WithAnimation(SearchExternalAnimationClip(external.Name));
-                    break;
-                default:
-                    throw new DeclavatarInternalException("Invalid LayerAnimation");
+                switch (animation)
+                {
+                    case Data.LayerAnimation.Inline inline:
+                        state.WithAnimation(CreateInlineClip(inline));
+                        AppendPerState(layer, state, inline.Targets);
+                        break;
+                    case Data.LayerAnimation.KeyedInline keyedInline:
+                        state.WithAnimation(CreateKeyedInlineClip(keyedInline));
+                        break;
+                    case Data.LayerAnimation.External external:
+                        state.WithAnimation(SearchExternalAnimationClip(external.Name));
+                        break;
+                    default:
+                        ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_layer_animation");
+                        throw new DeclavatarInternalException("internal");
+                }
+            }
+            catch (DeclavatarRuntimeException)
+            {
             }
         }
 
@@ -300,12 +318,12 @@ namespace KusakaFactory.Declavatar
                         case Data.Target.Tracking _:
                             continue;
                         default:
-                            throw new DeclavatarException("Invalid Target deserialization object");
+                            ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_target");
+                            break;
                     }
                 }
-                catch (DeclavatarRuntimeException ex)
+                catch (DeclavatarRuntimeException)
                 {
-                    LogRuntimeError(ex.Message);
                 }
             }
 
@@ -357,9 +375,8 @@ namespace KusakaFactory.Declavatar
                             AnimationUtility.SetObjectReferenceCurve(keyedInlineClip.Clip, binding, keyframes);
                         }
                     }
-                    catch (DeclavatarRuntimeException ex)
+                    catch (DeclavatarRuntimeException)
                     {
-                        LogRuntimeError(ex.Message);
                     }
                 }
             });
@@ -370,27 +387,21 @@ namespace KusakaFactory.Declavatar
         {
             foreach (var target in targets)
             {
-                try
+                switch (target)
                 {
-                    switch (target)
-                    {
-                        case Data.Target.Shape _:
-                        case Data.Target.Object _:
-                        case Data.Target.Material _:
-                            continue;
-                        case Data.Target.Drive drive:
-                            AppendStateParameterDrive(layer, state, drive.ParameterDrive);
-                            break;
-                        case Data.Target.Tracking control:
-                            AppendStateTrackingControl(state, control.Control);
-                            break;
-                        default:
-                            throw new DeclavatarException("Invalid Target deserialization object");
-                    }
-                }
-                catch (DeclavatarRuntimeException ex)
-                {
-                    LogRuntimeError(ex.Message);
+                    case Data.Target.Shape _:
+                    case Data.Target.Object _:
+                    case Data.Target.Material _:
+                        continue;
+                    case Data.Target.Drive drive:
+                        AppendStateParameterDrive(layer, state, drive.ParameterDrive);
+                        break;
+                    case Data.Target.Tracking control:
+                        AppendStateTrackingControl(state, control.Control);
+                        break;
+                    default:
+                        ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_target");
+                        break;
                 }
             }
         }
@@ -669,7 +680,8 @@ namespace KusakaFactory.Declavatar
                 var value = assetSet.Animations.FirstOrDefault((a) => a.Key == key);
                 if (value != null) return value.Animation;
             }
-            throw new DeclavatarAssetException($"AnimationClip {key} not defined");
+            ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.animation_not_found", key);
+            throw new DeclavatarRuntimeException("runtime");
         }
 
         private Material SearchExternalMaterial(string key)
@@ -680,7 +692,8 @@ namespace KusakaFactory.Declavatar
                 var value = assetSet.Materials.FirstOrDefault((a) => a.Key == key);
                 if (value != null) return value.Material;
             }
-            throw new DeclavatarAssetException($"Material {key} not defined");
+            ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.material_not_found", key);
+            throw new DeclavatarRuntimeException("runtime");
         }
 
         private string SearchExternalLocalization(string key)
@@ -691,29 +704,26 @@ namespace KusakaFactory.Declavatar
                 var value = assetSet.Localizations.FirstOrDefault((a) => a.Key == key);
                 if (value != null) return value.Localization;
             }
-            throw new DeclavatarAssetException($"Localization {key} not defined");
+            ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.localization_not_found", key);
+            throw new DeclavatarRuntimeException("runtime");
         }
 
         #endregion
 
         #region Object Searching
 
-        private void LogRuntimeError(string message)
-        {
-            if (_logWindow == null) _logWindow = BuildLogWindow.ShowLogWindow();
-            _logWindow.AddLog(ErrorKind.RuntimeError, message);
-        }
-
         internal sealed class GameObjectSearcher
         {
+            private Localizer _localizer;
             private GameObject _root = null;
             private Dictionary<string, Renderer> _renderers = new Dictionary<string, Renderer>();
             private Dictionary<string, SkinnedMeshRenderer> _skinnedMeshRenderers = new Dictionary<string, SkinnedMeshRenderer>();
             private Dictionary<string, GameObject> _objects = new Dictionary<string, GameObject>();
             private HashSet<string> _searchedPaths = new HashSet<string>();
 
-            public GameObjectSearcher(GameObject root)
+            public GameObjectSearcher(Localizer localizer, GameObject root)
             {
+                _localizer = localizer;
                 _root = root;
             }
 
@@ -726,8 +736,13 @@ namespace KusakaFactory.Declavatar
                 }
                 else
                 {
-                    var mr = _root.transform.Find(path)?.GetComponent<Renderer>()
-                        ?? throw new DeclavatarRuntimeException($"Renderer '{path}' not found");
+
+                    var mr = _root.transform.Find(path)?.GetComponent<Renderer>();
+                    if (mr == null)
+                    {
+                        ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.renderer_not_found", path);
+                        throw new DeclavatarRuntimeException("runtime");
+                    }
                     _searchedPaths.Add(cachedPath);
                     _renderers[path] = mr;
                     return mr;
@@ -743,8 +758,12 @@ namespace KusakaFactory.Declavatar
                 }
                 else
                 {
-                    var smr = _root.transform.Find(path)?.GetComponent<SkinnedMeshRenderer>()
-                        ?? throw new DeclavatarRuntimeException($"SkinnedMeshRenderer '{path}' not found");
+                    var smr = _root.transform.Find(path)?.GetComponent<SkinnedMeshRenderer>();
+                    if (smr == null)
+                    {
+                        ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.skinned_renderer_not_found", path);
+                        throw new DeclavatarRuntimeException("runtime");
+                    }
                     _searchedPaths.Add(cachedPath);
                     _skinnedMeshRenderers[path] = smr;
                     return smr;
@@ -760,8 +779,12 @@ namespace KusakaFactory.Declavatar
                 }
                 else
                 {
-                    var go = _root.transform.Find(path)?.gameObject
-                        ?? throw new DeclavatarRuntimeException($"GameObject '{path}' not found");
+                    var go = _root.transform.Find(path)?.gameObject;
+                    if (go == null)
+                    {
+                        ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.object_not_found", path);
+                        throw new DeclavatarRuntimeException("runtime");
+                    }
                     _searchedPaths.Add(cachedPath);
                     _objects[path] = go;
                     return go;

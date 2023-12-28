@@ -1,0 +1,15 @@
+{
+    "runtime.animation_not_found": "実行時エラー",
+    "runtime.material_not_found": "実行時エラー",
+    "runtime.localization_not_found": "実行時エラー",
+    "runtime.renderer_not_found": "実行時エラー",
+    "runtime.skinned_renderer_not_found": "実行時エラー",
+    "runtime.object_not_found": "実行時エラー",
+
+    "runtime.animation_not_found:description": "アニメーション '{0}' が存在しません",
+    "runtime.material_not_found:description": "マテリアル '{0}' が存在しません",
+    "runtime.localization_not_found:description": "翻訳文字列 '{0}' が存在しません",
+    "runtime.renderer_not_found:description": "Renderer '{0}' が存在しません",
+    "runtime.skinned_renderer_not_found:description": "SkinnedMeshRenderer '{0}' が存在しません",
+    "runtime.object_not_found:description": "GameObject '{0}' が存在しません"
+}

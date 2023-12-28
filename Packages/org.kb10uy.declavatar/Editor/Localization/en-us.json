@@ -1,0 +1,27 @@
+{
+    "runtime.internal.invalid_animation_group": "Internal Error",
+    "runtime.internal.invalid_blendtree": "Internal Error",
+    "runtime.internal.invalid_layer_condition": "Internal Error",
+    "runtime.internal.invalid_layer_animation": "Internal Error",
+    "runtime.internal.invalid_target": "Internal Error",
+
+    "runtime.internal.invalid_animation_group:description": "Invalid animation group detected",
+    "runtime.internal.invalid_blendtree:description": "Invalid blend tree detected",
+    "runtime.internal.invalid_layer_condition:description": "Invalid layer condition detected",
+    "runtime.internal.invalid_layer_animation:description": "Invalid animation detected",
+    "runtime.internal.invalid_target:description": "Invalid target detected",
+
+    "runtime.animation_not_found": "Runtime Error",
+    "runtime.material_not_found": "Runtime Error",
+    "runtime.localization_not_found": "Runtime Error",
+    "runtime.renderer_not_found": "Runtime Error",
+    "runtime.skinned_renderer_not_found": "Runtime Error",
+    "runtime.object_not_found": "Runtime Error",
+
+    "runtime.animation_not_found:description": "Animation '{0}' not found",
+    "runtime.material_not_found:description": "Material '{0}' not found",
+    "runtime.localization_not_found:description": "Localization '{0}' not found",
+    "runtime.renderer_not_found:description": "Renderer '{0}' not found",
+    "runtime.skinned_renderer_not_found:description": "SkinnedMeshRenderer '{0}' not found",
+    "runtime.object_not_found:description": "GameObject '{0}' not found"
+}

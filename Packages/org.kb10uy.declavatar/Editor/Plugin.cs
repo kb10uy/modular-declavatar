@@ -133,7 +133,7 @@ namespace KusakaFactory.Declavatar
             return jsonString;
         }
 
-        public List<string> FetchErrors()
+        public List<string> FetchLogJsons()
         {
             var logs = new List<string>();
             uint logsCount = 0;

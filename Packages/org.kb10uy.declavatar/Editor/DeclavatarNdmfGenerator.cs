@@ -8,13 +8,11 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
-using AnimatorAsCode.V1.NDMFProcessor;
 using KusakaFactory.Declavatar;
 using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
-using AnimatorAsCode.V1;
 
-[assembly: ExportsPlugin(typeof(DeclavatarNdmfGenerator))]
+[assembly: ExportsPlugin(typeof(DeclavatarProcessor))]
 [assembly: ExportsPlugin(typeof(DeclavatarComponentRemover))]
 namespace KusakaFactory.Declavatar
 {
@@ -56,19 +54,8 @@ namespace KusakaFactory.Declavatar
             var (declaration, logs) = CompileDeclaration(gbd.Definition.text, (FormatKind)gbd.Format);
             ReportLogsForNdmf(logs);
 
-            var context = new DeclavatarContext(ctx, _localizer, gbd, declaration);
-
-            /*
-            var declavatar = new NonDestructiveDeclavatar(
-                gbd.DeclarationRoot != null ? gbd.DeclarationRoot : gbd.gameObject,
-                gbd.InstallTarget,
-                localizer,
-                aac,
-                definition,
-                externalAssets
-            );
-            declavatar.Execute(my.GenerateMenuInstaller);
-            */
+            var declavatar = new NonDestructiveDeclavatar(new DeclavatarContext(ctx, _localizer, gbd, declaration));
+            declavatar.Execute(gbd.GenerateMenuInstaller);
         }
 
         #region Compilation
@@ -157,49 +144,6 @@ namespace KusakaFactory.Declavatar
         }
 
         #endregion
-    }
-
-    public class DeclavatarNdmfGenerator : AacPlugin<GenerateByDeclavatar>
-    {
-
-
-        protected override AacPluginOutput Execute()
-        {
-            /*
-            // Skip if definition is empty
-            if (my.Definition == null) return AacPluginOutput.Regular();
-
-            // Compile
-            var localizer = ConstructLocalizer();
-            string definitionJson;
-            using (var declavatarPlugin = new Plugin())
-            {
-                declavatarPlugin.Reset();
-
-                var config = Configuration.LoadEditorUserSettings();
-                foreach (var path in config.LibraryRelativePath)
-                {
-                    var p = path.Trim();
-                    if (!string.IsNullOrEmpty(p)) declavatarPlugin.AddLibraryPath(ConcatenateProjectRelativePath(p));
-                }
-
-                if (!declavatarPlugin.Compile(my.Definition.text, (FormatKind)(uint)my.Format))
-                {
-                    ReportLogsForNdmf(localizer, declavatarPlugin.FetchLogJsons());
-                    return AacPluginOutput.Regular();
-                }
-
-                definitionJson = declavatarPlugin.GetAvatarJson();
-            }
-
-            var definition = JsonConvert.DeserializeObject<Data.Avatar>(definitionJson, _serializerSettings);
-            var externalAssets = my.ExternalAssets.Where((ea) => ea != null).ToList();
-            Debug.Log($"Declavatar: definition '{definition.Name}' compiled");
-            */
-
-            return AacPluginOutput.Regular();
-        }
-
     }
 
     public class DeclavatarComponentRemover : Plugin<DeclavatarComponentRemover>

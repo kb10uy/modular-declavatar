@@ -14,7 +14,6 @@ using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
 using AnimatorAsCode.V1;
 
-
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfGenerator))]
 [assembly: ExportsPlugin(typeof(DeclavatarComponentRemover))]
 namespace KusakaFactory.Declavatar
@@ -57,21 +56,9 @@ namespace KusakaFactory.Declavatar
             var (declaration, logs) = CompileDeclaration(gbd.Definition.text, (FormatKind)gbd.Format);
             ReportLogsForNdmf(logs);
 
-            var aac = AacV1.Create(new AacConfiguration
-            {
-                // MEMO: should it use avatar name from decl file?
-                SystemName = "Declavatar",
+            var context = new DeclavatarContext(ctx, _localizer, gbd, declaration);
 
-                // MEMO: should it be Declaration Root?
-                AnimatorRoot = ctx.AvatarRootTransform,
-                DefaultValueRoot = ctx.AvatarRootTransform,
-
-                AssetKey = GUID.Generate().ToString(),
-                AssetContainer = ctx.AssetContainer,
-                ContainerMode = AacConfiguration.Container.OnlyWhenPersistenceRequired,
-                DefaultsProvider = new AacDefaultsProvider(false),
-            });
-
+            /*
             var declavatar = new NonDestructiveDeclavatar(
                 gbd.DeclarationRoot != null ? gbd.DeclarationRoot : gbd.gameObject,
                 gbd.InstallTarget,
@@ -81,6 +68,7 @@ namespace KusakaFactory.Declavatar
                 externalAssets
             );
             declavatar.Execute(my.GenerateMenuInstaller);
+            */
         }
 
         #region Compilation
@@ -177,6 +165,7 @@ namespace KusakaFactory.Declavatar
 
         protected override AacPluginOutput Execute()
         {
+            /*
             // Skip if definition is empty
             if (my.Definition == null) return AacPluginOutput.Regular();
 
@@ -206,7 +195,7 @@ namespace KusakaFactory.Declavatar
             var definition = JsonConvert.DeserializeObject<Data.Avatar>(definitionJson, _serializerSettings);
             var externalAssets = my.ExternalAssets.Where((ea) => ea != null).ToList();
             Debug.Log($"Declavatar: definition '{definition.Name}' compiled");
-
+            */
 
             return AacPluginOutput.Regular();
         }

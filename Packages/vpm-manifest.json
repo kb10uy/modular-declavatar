@@ -12,12 +12,6 @@
     "dev.hai-vr.animator-as-code.v1.vrchat": {
       "version": "1.0.9930"
     },
-    "dev.hai-vr.animator-as-code.v1.ndmf-processor": {
-      "version": "1.0.9921"
-    },
-    "dev.hai-vr.animator-as-code.v1.modular-avatar": {
-      "version": "1.0.9921"
-    },
     "com.vrchat.avatars": {
       "version": "3.5.0"
     }
@@ -46,21 +40,6 @@
       "version": "1.0.9930",
       "dependencies": {
         "dev.hai-vr.animator-as-code.v1": "^1.0.0",
-        "com.vrchat.avatars": "^3.3.0"
-      }
-    },
-    "dev.hai-vr.animator-as-code.v1.ndmf-processor": {
-      "version": "1.0.9921",
-      "dependencies": {
-        "dev.hai-vr.animator-as-code.v1": "1.0.x",
-        "nadena.dev.ndmf": "1.2.x"
-      }
-    },
-    "dev.hai-vr.animator-as-code.v1.modular-avatar": {
-      "version": "1.0.9921",
-      "dependencies": {
-        "dev.hai-vr.animator-as-code.v1": "1.0.x",
-        "nadena.dev.modular-avatar": "^1.8.0",
         "com.vrchat.avatars": "^3.3.0"
       }
     },

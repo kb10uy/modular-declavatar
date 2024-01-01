@@ -195,18 +195,6 @@
       "source": "embedded",
       "dependencies": {}
     },
-    "dev.hai-vr.animator-as-code.v1.modular-avatar": {
-      "version": "file:dev.hai-vr.animator-as-code.v1.modular-avatar",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
-    "dev.hai-vr.animator-as-code.v1.ndmf-processor": {
-      "version": "file:dev.hai-vr.animator-as-code.v1.ndmf-processor",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "dev.hai-vr.animator-as-code.v1.vrchat": {
       "version": "file:dev.hai-vr.animator-as-code.v1.vrchat",
       "depth": 0,

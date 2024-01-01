@@ -138,7 +138,7 @@ namespace KusakaFactory.Declavatar.Data
                 case "FoorRight": return AacAv3.Av3TrackingElement.RightFoot;
                 case "FingersLeft": return AacAv3.Av3TrackingElement.LeftFingers;
                 case "FingersRight": return AacAv3.Av3TrackingElement.RightFingers;
-                default: throw new DeclavatarDeclarationException("invalid tracking element");
+                default: throw new JsonException("invalid tracking element");
             }
         }
     }

@@ -5,36 +5,19 @@ using UnityEditor;
 using UnityEditor.Animations;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDK3.Avatars.ScriptableObjects;
+using nadena.dev.modular_avatar.core;
 using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.VRC;
-using nadena.dev.modular_avatar.core;
-using KusakaFactory.Declavatar.Runtime;
-using nadena.dev.ndmf;
-using nadena.dev.ndmf.localization;
 
 namespace KusakaFactory.Declavatar
 {
     public sealed class NonDestructiveDeclavatar
     {
-        private GameObject _rootGameObject;
-        private GameObject _installTarget;
-        private Data.Avatar _declavatarDefinition;
-        private IReadOnlyList<ExternalAsset> _externalAssets;
-        private Localizer _localizer;
-        private AacFlBase _ndmfAac;
+        private DeclavatarContext _context;
 
-        private GameObjectSearcher _searcher;
-
-        public NonDestructiveDeclavatar(GameObject root, GameObject installTarget, Localizer localizer, AacFlBase aac, Data.Avatar definition, IReadOnlyList<ExternalAsset> assets)
+        public NonDestructiveDeclavatar(DeclavatarContext context)
         {
-            _rootGameObject = root;
-            _installTarget = installTarget;
-            _declavatarDefinition = definition;
-            _externalAssets = assets;
-            _localizer = localizer;
-            _ndmfAac = aac;
-
-            _searcher = new GameObjectSearcher(localizer, root);
+            _context = context;
         }
 
         public void Execute(bool generateMenuInstaller)
@@ -53,9 +36,9 @@ namespace KusakaFactory.Declavatar
 
         private void GenerateFXLayerNonDestructive()
         {
-            var fxAnimator = _ndmfAac.NewAnimatorController();
+            var fxAnimator = _context.Aac.NewAnimatorController();
 
-            foreach (var animationGroup in _declavatarDefinition.FxController)
+            foreach (var animationGroup in _context.AvatarDeclaration.FxController)
             {
                 switch (animationGroup.Content)
                 {
@@ -72,13 +55,13 @@ namespace KusakaFactory.Declavatar
                         GenerateRawLayer(fxAnimator, animationGroup.Name, r);
                         break;
                     default:
-                        ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_animation_group");
+                        _context.ReportInternalError("runtime.internal.invalid_animation_group");
                         break;
                 }
             }
 
             // MEMO: should be absolute path mode?
-            var mergeAnimator = _rootGameObject.AddComponent<ModularAvatarMergeAnimator>();
+            var mergeAnimator = _context.DeclarationRoot.AddComponent<ModularAvatarMergeAnimator>();
             mergeAnimator.animator = fxAnimator.AnimatorController;
             mergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
             mergeAnimator.pathMode = MergeAnimatorPathMode.Relative;
@@ -194,7 +177,7 @@ namespace KusakaFactory.Declavatar
                                     }
                                     break;
                                 default:
-                                    ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_blendtree");
+                                    _context.ReportInternalError("runtime.internal.invalid_blendtree");
                                     break;
                             }
                         }
@@ -243,7 +226,7 @@ namespace KusakaFactory.Declavatar
                             andTerms.And(layer.FloatParameter(leFloat.Parameter).IsLessThan(leFloat.Value));
                             break;
                         default:
-                            ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_layer_condition");
+                            _context.ReportInternalError("runtime.internal.invalid_layer_condition");
                             break;
                     }
                 }
@@ -259,9 +242,9 @@ namespace KusakaFactory.Declavatar
                 case Data.LayerAnimation.KeyedInline keyedInline:
                     return CreateKeyedInlineClip(keyedInline).Clip;
                 case Data.LayerAnimation.External external:
-                    return SearchExternalAnimationClip(external.Name);
+                    return _context.GetExternalAnimationClip(external.Name);
                 default:
-                    ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_layer_animation");
+                    _context.ReportInternalError("runtime.internal.invalid_layer_animation");
                     throw new DeclavatarInternalException("internal");
             }
         }
@@ -280,10 +263,10 @@ namespace KusakaFactory.Declavatar
                         state.WithAnimation(CreateKeyedInlineClip(keyedInline));
                         break;
                     case Data.LayerAnimation.External external:
-                        state.WithAnimation(SearchExternalAnimationClip(external.Name));
+                        state.WithAnimation(_context.GetExternalAnimationClip(external.Name));
                         break;
                     default:
-                        ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_layer_animation");
+                        _context.ReportInternalError("runtime.internal.invalid_layer_animation");
                         throw new DeclavatarInternalException("internal");
                 }
             }
@@ -294,7 +277,7 @@ namespace KusakaFactory.Declavatar
 
         private AacFlClip CreateInlineClip(Data.LayerAnimation.Inline inline)
         {
-            var inlineClip = _ndmfAac.NewClip();
+            var inlineClip = _context.Aac.NewClip();
             foreach (var target in inline.Targets)
             {
                 try
@@ -302,23 +285,23 @@ namespace KusakaFactory.Declavatar
                     switch (target)
                     {
                         case Data.Target.Shape shape:
-                            var smr = _searcher.FindSkinnedMeshRenderer(shape.Mesh);
+                            var smr = _context.FindSkinnedMeshRenderer(shape.Mesh);
                             inlineClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
                             break;
                         case Data.Target.Object obj:
-                            var go = _searcher.FindGameObject(obj.Name);
+                            var go = _context.FindGameObject(obj.Name);
                             inlineClip.Toggling(go, obj.Enabled);
                             break;
                         case Data.Target.Material material:
-                            var mr = _searcher.FindRenderer(material.Mesh);
-                            var targetMaterial = SearchExternalMaterial(material.AssetKey);
+                            var mr = _context.FindRenderer(material.Mesh);
+                            var targetMaterial = _context.GetExternalMaterial(material.AssetKey);
                             inlineClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
                             break;
                         case Data.Target.Drive _:
                         case Data.Target.Tracking _:
                             continue;
                         default:
-                            ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_target");
+                            _context.ReportInternalError("runtime.internal.invalid_target");
                             break;
                     }
                 }
@@ -335,7 +318,7 @@ namespace KusakaFactory.Declavatar
             var groups = keyedInline.Keyframes
                 .SelectMany((kf) => kf.Targets.Select((t) => (kf.Value, Target: t)))
                 .GroupBy((p) => Data.VRChatExtension.AsGroupingKey(p.Target));
-            var keyedInlineClip = _ndmfAac.NewClip().NonLooping();
+            var keyedInlineClip = _context.Aac.NewClip().NonLooping();
             keyedInlineClip.Animating((e) =>
             {
                 foreach (var group in groups)
@@ -345,7 +328,7 @@ namespace KusakaFactory.Declavatar
                         if (group.Key.StartsWith("shape://"))
                         {
                             var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Shape)).ToList();
-                            var smr = _searcher.FindSkinnedMeshRenderer(points[0].Target.Mesh);
+                            var smr = _context.FindSkinnedMeshRenderer(points[0].Target.Mesh);
                             e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
                             {
                                 foreach (var point in points) kfs.Linear(point.Value * 100.0f, point.Target.Value * 100.0f);
@@ -354,7 +337,7 @@ namespace KusakaFactory.Declavatar
                         else if (group.Key.StartsWith("object://"))
                         {
                             var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Object)).ToList();
-                            var go = _searcher.FindGameObject(points[0].Target.Name);
+                            var go = _context.FindGameObject(points[0].Target.Name);
                             e.Animates(go).WithFrameCountUnit((kfs) =>
                             {
                                 foreach (var point in points) kfs.Constant(point.Value * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
@@ -364,13 +347,13 @@ namespace KusakaFactory.Declavatar
                         {
                             // Use traditional API for matarial swapping
                             var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Material)).ToList();
-                            var mr = _searcher.FindRenderer(points[0].Target.Mesh);
+                            var mr = _context.FindRenderer(points[0].Target.Mesh);
 
                             var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
                             var keyframes = points.Select((p) => new ObjectReferenceKeyframe
                             {
                                 time = p.Value * 100.0f,
-                                value = SearchExternalMaterial(p.Target.AssetKey),
+                                value = _context.GetExternalMaterial(p.Target.AssetKey),
                             }).ToArray();
                             AnimationUtility.SetObjectReferenceCurve(keyedInlineClip.Clip, binding, keyframes);
                         }
@@ -400,7 +383,7 @@ namespace KusakaFactory.Declavatar
                         AppendStateTrackingControl(state, control.Control);
                         break;
                     default:
-                        ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, "runtime.internal.invalid_target");
+                        _context.ReportInternalError("runtime.internal.invalid_target");
                         break;
                 }
             }
@@ -464,10 +447,11 @@ namespace KusakaFactory.Declavatar
             // MA Parameters modifies itself and child GameObject
             // It must be on _rootGameObject
             var parametersComponent =
-                _rootGameObject.GetComponent<ModularAvatarParameters>() ??
-                _rootGameObject.AddComponent<ModularAvatarParameters>();
+                _context.DeclarationRoot.GetComponent<ModularAvatarParameters>() ??
+                _context.DeclarationRoot.AddComponent<ModularAvatarParameters>();
 
-            var newParameters = _declavatarDefinition
+            var newParameters = _context
+                .AvatarDeclaration
                 .Parameters
                 .Select((pd) => new ParameterConfig
                 {
@@ -488,16 +472,21 @@ namespace KusakaFactory.Declavatar
 
         private void GenerateMenuNonDestructive(bool generateMenuInstaller)
         {
-            if (_installTarget == null)
+            GameObject menuInstallRoot;
+            if (_context.MenuInstallRoot != null)
             {
-                _installTarget = new GameObject("DeclavatarMenuRoot");
-                _installTarget.transform.parent = _rootGameObject.transform.transform;
+                menuInstallRoot = _context.MenuInstallRoot;
+            }
+            else
+            {
+                menuInstallRoot = new GameObject("DeclavatarMenuRoot");
+                menuInstallRoot.transform.parent = _context.DeclarationRoot.transform;
             }
 
-            if (generateMenuInstaller) _installTarget.AddComponent<ModularAvatarMenuInstaller>();
-            _installTarget.AddComponent<ModularAvatarMenuGroup>();
+            if (generateMenuInstaller) menuInstallRoot.AddComponent<ModularAvatarMenuInstaller>();
+            menuInstallRoot.AddComponent<ModularAvatarMenuGroup>();
 
-            foreach (var item in _declavatarDefinition.MenuItems)
+            foreach (var item in _context.AvatarDeclaration.MenuItems)
             {
                 GameObject menuItem;
                 switch (item)
@@ -523,9 +512,8 @@ namespace KusakaFactory.Declavatar
                     default:
                         continue;
                 }
-                menuItem.transform.parent = _installTarget.gameObject.transform;
+                menuItem.transform.parent = menuInstallRoot.transform;
             }
-
         }
 
         private GameObject GenerateMenuGroupObject(Data.MenuItem.SubMenu submenu)
@@ -666,130 +654,6 @@ namespace KusakaFactory.Declavatar
             };
 
             return menuItemObject;
-        }
-
-        #endregion
-
-        #region External Asset
-
-        private AnimationClip SearchExternalAnimationClip(string key)
-        {
-            foreach (var assetSet in _externalAssets)
-            {
-                if (assetSet.Animations == null) continue;
-                var value = assetSet.Animations.FirstOrDefault((a) => a.Key == key);
-                if (value != null) return value.Animation;
-            }
-            ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.animation_not_found", key);
-            throw new DeclavatarRuntimeException("runtime");
-        }
-
-        private Material SearchExternalMaterial(string key)
-        {
-            foreach (var assetSet in _externalAssets)
-            {
-                if (assetSet.Materials == null) continue;
-                var value = assetSet.Materials.FirstOrDefault((a) => a.Key == key);
-                if (value != null) return value.Material;
-            }
-            ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.material_not_found", key);
-            throw new DeclavatarRuntimeException("runtime");
-        }
-
-        private string SearchExternalLocalization(string key)
-        {
-            foreach (var assetSet in _externalAssets)
-            {
-                if (assetSet.Localizations == null) continue;
-                var value = assetSet.Localizations.FirstOrDefault((a) => a.Key == key);
-                if (value != null) return value.Localization;
-            }
-            ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.localization_not_found", key);
-            throw new DeclavatarRuntimeException("runtime");
-        }
-
-        #endregion
-
-        #region Object Searching
-
-        internal sealed class GameObjectSearcher
-        {
-            private Localizer _localizer;
-            private GameObject _root = null;
-            private Dictionary<string, Renderer> _renderers = new Dictionary<string, Renderer>();
-            private Dictionary<string, SkinnedMeshRenderer> _skinnedMeshRenderers = new Dictionary<string, SkinnedMeshRenderer>();
-            private Dictionary<string, GameObject> _objects = new Dictionary<string, GameObject>();
-            private HashSet<string> _searchedPaths = new HashSet<string>();
-
-            public GameObjectSearcher(Localizer localizer, GameObject root)
-            {
-                _localizer = localizer;
-                _root = root;
-            }
-
-            public Renderer FindRenderer(string path)
-            {
-                var cachedPath = $"mr://{path}";
-                if (_searchedPaths.Contains(cachedPath))
-                {
-                    return _renderers.TryGetValue(path, out var mr) ? mr : null;
-                }
-                else
-                {
-
-                    var mr = _root.transform.Find(path)?.GetComponent<Renderer>();
-                    if (mr == null)
-                    {
-                        ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.renderer_not_found", path);
-                        throw new DeclavatarRuntimeException("runtime");
-                    }
-                    _searchedPaths.Add(cachedPath);
-                    _renderers[path] = mr;
-                    return mr;
-                }
-            }
-
-            public SkinnedMeshRenderer FindSkinnedMeshRenderer(string path)
-            {
-                var cachedPath = $"smr://{path}";
-                if (_searchedPaths.Contains(cachedPath))
-                {
-                    return _skinnedMeshRenderers.TryGetValue(path, out var smr) ? smr : null;
-                }
-                else
-                {
-                    var smr = _root.transform.Find(path)?.GetComponent<SkinnedMeshRenderer>();
-                    if (smr == null)
-                    {
-                        ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.skinned_renderer_not_found", path);
-                        throw new DeclavatarRuntimeException("runtime");
-                    }
-                    _searchedPaths.Add(cachedPath);
-                    _skinnedMeshRenderers[path] = smr;
-                    return smr;
-                }
-            }
-
-            public GameObject FindGameObject(string path)
-            {
-                var cachedPath = $"go://{path}";
-                if (_searchedPaths.Contains(cachedPath))
-                {
-                    return _objects.TryGetValue(path, out var smr) ? smr : null;
-                }
-                else
-                {
-                    var go = _root.transform.Find(path)?.gameObject;
-                    if (go == null)
-                    {
-                        ErrorReport.ReportError(_localizer, ErrorSeverity.Error, "runtime.object_not_found", path);
-                        throw new DeclavatarRuntimeException("runtime");
-                    }
-                    _searchedPaths.Add(cachedPath);
-                    _objects[path] = go;
-                    return go;
-                }
-            }
         }
 
         #endregion

@@ -3,97 +3,95 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEditor;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
-using AnimatorAsCode.V1.NDMFProcessor;
+using nadena.dev.ndmf.localization;
 using KusakaFactory.Declavatar;
 using KusakaFactory.Declavatar.EditorExtension;
 using KusakaFactory.Declavatar.Runtime;
-using nadena.dev.ndmf.localization;
-using UnityEditor;
 
-
-[assembly: ExportsPlugin(typeof(DeclavatarNdmfGenerator))]
+[assembly: ExportsPlugin(typeof(DeclavatarProcessor))]
 [assembly: ExportsPlugin(typeof(DeclavatarComponentRemover))]
 namespace KusakaFactory.Declavatar
 {
-    public class DeclavatarNdmfGenerator : AacPlugin<GenerateByDeclavatar>
+    public sealed class DeclavatarProcessor : Plugin<DeclavatarProcessor>
     {
-        private static readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings
+        public override string DisplayName => "Declavatar Processor";
+        public override string QualifiedName => "org.kb10uy.declavatar-processor";
+
+        private JsonSerializerSettings _serializerSettings;
+        private Localizer _localizer;
+
+
+        protected override void Configure()
         {
-            ContractResolver = new DefaultContractResolver
+            _serializerSettings = new JsonSerializerSettings
             {
-                NamingStrategy = new SnakeCaseNamingStrategy(),
-            }
-        };
-
-        protected override AacPluginOutput Execute()
-        {
-            // Skip if definition is empty
-            if (my.Definition == null) return AacPluginOutput.Regular();
-
-            // Compile
-            var localizer = ConstructLocalizer();
-            string definitionJson;
-            using (var declavatarPlugin = new Plugin())
-            {
-                declavatarPlugin.Reset();
-
-                var config = Configuration.LoadEditorUserSettings();
-                foreach (var path in config.LibraryRelativePath)
+                ContractResolver = new DefaultContractResolver
                 {
-                    var p = path.Trim();
-                    if (!string.IsNullOrEmpty(p)) declavatarPlugin.AddLibraryPath(ConcatenateProjectRelativePath(p));
+                    NamingStrategy = new SnakeCaseNamingStrategy(),
                 }
+            };
+            _localizer = ConstructLocalizer();
 
-                if (!declavatarPlugin.Compile(my.Definition.text, (FormatKind)(uint)my.Format))
-                {
-                    ReportLogsForNdmf(localizer, declavatarPlugin.FetchErrors());
-                    return AacPluginOutput.Regular();
-                }
-
-                definitionJson = declavatarPlugin.GetAvatarJson();
-            }
-
-            var definition = JsonConvert.DeserializeObject<Data.Avatar>(definitionJson, _serializerSettings);
-            var externalAssets = my.ExternalAssets.Where((ea) => ea != null).ToList();
-            Debug.Log($"Declavatar: definition '{definition.Name}' compiled");
-
-            var declavatar = new NonDestructiveDeclavatar(
-                my.DeclarationRoot != null ? my.DeclarationRoot : my.gameObject,
-                my.InstallTarget,
-                localizer,
-                aac,
-                definition,
-                externalAssets
-            );
-            declavatar.Execute(my.GenerateMenuInstaller);
-            return AacPluginOutput.Regular();
+            InPhase(BuildPhase.Generating).Run("Compile and generate declavatar files", Execute);
         }
 
-        private static string ConcatenateProjectRelativePath(string relativePath)
+        private void Execute(BuildContext ctx)
+        {
+            var allChildrenComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar>();
+            // TODO: add ordering feature by int
+            foreach (var component in allChildrenComponents)
+            {
+                ProcessForComponent(ctx, component);
+            }
+        }
+
+        private void ProcessForComponent(BuildContext ctx, GenerateByDeclavatar gbd)
+        {
+            var (declaration, logs) = CompileDeclaration(gbd.Definition.text, (FormatKind)gbd.Format);
+            ReportLogsForNdmf(logs);
+
+            var declavatar = new NonDestructiveDeclavatar(new DeclavatarContext(ctx, _localizer, gbd, declaration));
+            declavatar.Execute(gbd.GenerateMenuInstaller);
+        }
+
+        #region Compilation
+
+        private (Data.Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
+        {
+            using var declavatarPlugin = new Plugin();
+            declavatarPlugin.Reset();
+
+            // Load libraries
+            foreach (var libraryPath in GetDeclavatarLibraryPaths()) declavatarPlugin.AddLibraryPath(libraryPath);
+
+            // Compile declaration
+            var compileResult = declavatarPlugin.Compile(source, format);
+            var logs = declavatarPlugin.FetchLogJsons();
+            if (!compileResult) return (null, logs);
+
+            var definitionJson = declavatarPlugin.GetAvatarJson();
+            var definition = JsonConvert.DeserializeObject<Data.Avatar>(definitionJson, _serializerSettings);
+            return (definition, logs);
+        }
+
+        private IEnumerable<string> GetDeclavatarLibraryPaths()
         {
             var assetsPath = Application.dataPath;
             var projectPath = Path.GetDirectoryName(assetsPath);
-            return Path.Combine(projectPath, relativePath);
+            var config = Configuration.LoadEditorUserSettings();
+
+            return config
+                .LibraryRelativePath
+                .Select((p) => p.Trim())
+                .Where((p) => !string.IsNullOrEmpty(p))
+                .Select((p) => Path.Combine(projectPath, p));
         }
 
-        private static void ReportLogsForNdmf(Localizer localizer, List<string> logJsons)
-        {
-            foreach (var logJson in logJsons)
-            {
-                var serializedLog = JsonConvert.DeserializeObject<Data.SerializedLog>(logJson, _serializerSettings);
-                var severity = serializedLog.Severity switch
-                {
-                    "Information" => ErrorSeverity.Information,
-                    "Warning" => ErrorSeverity.NonFatal,
-                    "Error" => ErrorSeverity.Error,
-                    _ => throw new DeclavatarInternalException("unknown severity"),
-                };
-                ErrorReport.ReportError(localizer, severity, serializedLog.Kind, serializedLog.Args.ToArray());
-            }
-        }
+        #endregion
 
         #region Localization
 
@@ -126,11 +124,32 @@ namespace KusakaFactory.Declavatar
         }
 
         #endregion
+
+        #region Logging
+
+        private void ReportLogsForNdmf(List<string> logJsons)
+        {
+            foreach (var logJson in logJsons)
+            {
+                var serializedLog = JsonConvert.DeserializeObject<Data.SerializedLog>(logJson, _serializerSettings);
+                var severity = serializedLog.Severity switch
+                {
+                    "Information" => ErrorSeverity.Information,
+                    "Warning" => ErrorSeverity.NonFatal,
+                    "Error" => ErrorSeverity.Error,
+                    _ => throw new DeclavatarInternalException("unknown severity"),
+                };
+                ErrorReport.ReportError(_localizer, severity, serializedLog.Kind, serializedLog.Args.ToArray());
+            }
+        }
+
+        #endregion
     }
 
     public class DeclavatarComponentRemover : Plugin<DeclavatarComponentRemover>
     {
         public override string DisplayName => "Declavatar Component Remover";
+        public override string QualifiedName => "org.kb10uy.declavatar-remover";
 
         protected override void Configure()
         {

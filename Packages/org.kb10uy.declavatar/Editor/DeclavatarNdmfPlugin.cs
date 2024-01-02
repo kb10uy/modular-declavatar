@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Newtonsoft.Json;
@@ -19,16 +19,16 @@ namespace KusakaFactory.Declavatar
         public override string DisplayName => "Declavatar";
         public override string QualifiedName => "org.kb10uy.declavatar";
 
-        private JsonSerializerSettings _serializerSettings;
         private Localizer _localizer;
+        private JsonSerializerSettings _serializerSettings;
 
         protected override void Configure()
         {
+            _localizer = DeclavatarLocalizer.ConstructLocalizer();
             _serializerSettings = new JsonSerializerSettings
             {
                 ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() }
             };
-            _localizer = ConstructLocalizer();
 
             InPhase(BuildPhase.Generating).Run("Compile and generate declavatar files", ProcessDeclarations);
             InPhase(BuildPhase.Transforming).Run("Remove declavatar components", RemoveComponents);
@@ -77,7 +77,26 @@ namespace KusakaFactory.Declavatar
             return (definition, logs);
         }
 
-        private static Localizer ConstructLocalizer()
+        private void ReportLogsForNdmf(List<string> logJsons)
+        {
+            foreach (var logJson in logJsons)
+            {
+                var serializedLog = JsonConvert.DeserializeObject<Data.SerializedLog>(logJson, _serializerSettings);
+                var severity = serializedLog.Severity switch
+                {
+                    "Information" => ErrorSeverity.Information,
+                    "Warning" => ErrorSeverity.NonFatal,
+                    "Error" => ErrorSeverity.Error,
+                    _ => throw new DeclavatarInternalException("unknown severity"),
+                };
+                ErrorReport.ReportError(_localizer, severity, serializedLog.Kind, serializedLog.Args.ToArray());
+            }
+        }
+    }
+
+    public static class DeclavatarLocalizer
+    {
+        public static Localizer ConstructLocalizer()
         {
             var localizations = new List<(string, Func<string, string>)>
             {
@@ -101,24 +120,8 @@ namespace KusakaFactory.Declavatar
 
         private static Dictionary<string, string> GetRuntimeLocalization(string locale)
         {
-            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>($"Packages/org.kb10uy.declavatar/Editor/Localization/{locale}.json");
+            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>($"Packages/org.kb10uy.declavatar/Localization/{locale}.json");
             return JsonConvert.DeserializeObject<Dictionary<string, string>>(asset.text);
-        }
-
-        private void ReportLogsForNdmf(List<string> logJsons)
-        {
-            foreach (var logJson in logJsons)
-            {
-                var serializedLog = JsonConvert.DeserializeObject<Data.SerializedLog>(logJson, _serializerSettings);
-                var severity = serializedLog.Severity switch
-                {
-                    "Information" => ErrorSeverity.Information,
-                    "Warning" => ErrorSeverity.NonFatal,
-                    "Error" => ErrorSeverity.Error,
-                    _ => throw new DeclavatarInternalException("unknown severity"),
-                };
-                ErrorReport.ReportError(_localizer, severity, serializedLog.Kind, serializedLog.Args.ToArray());
-            }
         }
     }
 }

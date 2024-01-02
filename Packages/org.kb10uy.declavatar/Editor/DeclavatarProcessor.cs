@@ -24,20 +24,18 @@ namespace KusakaFactory.Declavatar
         private JsonSerializerSettings _serializerSettings;
         private Localizer _localizer;
 
-
         protected override void Configure()
         {
             _serializerSettings = new JsonSerializerSettings
             {
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new SnakeCaseNamingStrategy(),
-                }
+                ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() }
             };
             _localizer = ConstructLocalizer();
 
             InPhase(BuildPhase.Generating).Run("Compile and generate declavatar files", Execute);
         }
+
+        #region Execution
 
         private void Execute(BuildContext ctx)
         {
@@ -53,16 +51,19 @@ namespace KusakaFactory.Declavatar
         {
             var (declaration, logs) = CompileDeclaration(gbd.Definition.text, (FormatKind)gbd.Format);
             ReportLogsForNdmf(logs);
+            if (declaration == null) return;
 
-            var declavatar = new NonDestructiveDeclavatar(new DeclavatarContext(ctx, _localizer, gbd, declaration));
+            var declavatar = new Declavatar(new DeclavatarContext(ctx, _localizer, gbd, declaration));
             declavatar.Execute(gbd.GenerateMenuInstaller);
         }
+
+        #endregion
 
         #region Compilation
 
         private (Data.Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
         {
-            using var declavatarPlugin = new Plugin();
+            using var declavatarPlugin = new DeclavatarPlugin();
             declavatarPlugin.Reset();
 
             // Load libraries
@@ -107,7 +108,7 @@ namespace KusakaFactory.Declavatar
 
         private static Func<string, string> CreateLocalizerFunc(string locale)
         {
-            var coreLocalization = Plugin.GetLogLocalization(locale);
+            var coreLocalization = DeclavatarPlugin.GetLogLocalization(locale);
             var runtimeLocalization = GetRuntimeLocalization(locale);
 
             var dictionary = new Dictionary<string, string>(coreLocalization.Union(runtimeLocalization));
@@ -149,7 +150,7 @@ namespace KusakaFactory.Declavatar
     public class DeclavatarComponentRemover : Plugin<DeclavatarComponentRemover>
     {
         public override string DisplayName => "Declavatar Component Remover";
-        public override string QualifiedName => "org.kb10uy.declavatar-remover";
+        public override string QualifiedName => "org.kb10uy.declavatar-component-remover";
 
         protected override void Configure()
         {

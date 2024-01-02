@@ -11,11 +11,11 @@ using AnimatorAsCode.V1.VRC;
 
 namespace KusakaFactory.Declavatar
 {
-    public sealed class NonDestructiveDeclavatar
+    public sealed class Declavatar
     {
         private DeclavatarContext _context;
 
-        public NonDestructiveDeclavatar(DeclavatarContext context)
+        public Declavatar(DeclavatarContext context)
         {
             _context = context;
         }
@@ -472,19 +472,8 @@ namespace KusakaFactory.Declavatar
 
         private void GenerateMenuNonDestructive(bool generateMenuInstaller)
         {
-            GameObject menuInstallRoot;
-            if (_context.MenuInstallRoot != null)
-            {
-                menuInstallRoot = _context.MenuInstallRoot;
-            }
-            else
-            {
-                menuInstallRoot = new GameObject("DeclavatarMenuRoot");
-                menuInstallRoot.transform.parent = _context.DeclarationRoot.transform;
-            }
-
-            if (generateMenuInstaller) menuInstallRoot.AddComponent<ModularAvatarMenuInstaller>();
-            menuInstallRoot.AddComponent<ModularAvatarMenuGroup>();
+            if (generateMenuInstaller) _context.MenuInstallRoot.AddComponent<ModularAvatarMenuInstaller>();
+            _context.MenuInstallRoot.AddComponent<ModularAvatarMenuGroup>();
 
             foreach (var item in _context.AvatarDeclaration.MenuItems)
             {
@@ -512,7 +501,7 @@ namespace KusakaFactory.Declavatar
                     default:
                         continue;
                 }
-                menuItem.transform.parent = menuInstallRoot.transform;
+                menuItem.transform.parent = _context.MenuInstallRoot.transform;
             }
         }
 

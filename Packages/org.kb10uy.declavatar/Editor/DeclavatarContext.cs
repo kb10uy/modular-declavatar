@@ -14,6 +14,7 @@ namespace KusakaFactory.Declavatar
         public GameObject AbsoluteAvatarRoot { get; }
         public GameObject DeclarationRoot { get; }
         public GameObject MenuInstallRoot { get; }
+
         public Data.Avatar AvatarDeclaration { get; }
         public AacFlBase Aac { get; }
 
@@ -30,7 +31,16 @@ namespace KusakaFactory.Declavatar
         {
             AbsoluteAvatarRoot = ndmfContext.AvatarRootObject;
             DeclarationRoot = gbd.DeclarationRoot != null ? gbd.DeclarationRoot : gbd.gameObject;
-            MenuInstallRoot = gbd.InstallTarget != null ? gbd.InstallTarget : gbd.gameObject;
+            if (gbd.InstallTarget != null)
+            {
+                MenuInstallRoot = gbd.InstallTarget;
+            }
+            else
+            {
+                MenuInstallRoot = new GameObject("DeclavatarMenuRoot");
+                MenuInstallRoot.transform.parent = DeclarationRoot.transform;
+            }
+
             AvatarDeclaration = avatar;
             Aac = AacV1.Create(new AacConfiguration
             {

@@ -60,5 +60,20 @@ namespace KusakaFactory.Declavatar.EditorExtension
 
             serializedObject.ApplyModifiedProperties();
         }
+
+        internal static class Constants
+        {
+            public static GUIStyle TitleLabel { get; private set; }
+
+            static Constants()
+            {
+                TitleLabel = new GUIStyle(EditorStyles.boldLabel)
+                {
+                    fontSize = 24,
+                    alignment = TextAnchor.MiddleCenter,
+                    margin = new RectOffset(8, 8, 4, 4),
+                };
+            }
+        }
     }
 }

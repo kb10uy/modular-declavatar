@@ -3,95 +3,16 @@ using System.Text;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
-using KusakaFactory.Declavatar.Data;
 
 namespace KusakaFactory.Declavatar
 {
-    internal static class Native
-    {
-#if UNITY_EDITOR_WIN
-        private const string LIBRARY_NAME = "declavatar.dll";
-#elif UNITY_EDITOR_OSX
-        private const string LIBRARY_NAME = "libdeclavatar.dylib";
-#elif UNITY_EDITOR_LINUX
-        private const string LIBRARY_NAME = "libdeclavatar.so";
-#endif
-
-        [DllImport(LIBRARY_NAME)]
-        public static extern IntPtr DeclavatarInit();
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarFree(IntPtr da);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarReset(NativeHandle da);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarAddLibraryPath(NativeHandle da, ref byte path, uint pathLength);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarCompile(NativeHandle da, ref byte source, uint sourceLength, uint formatKind);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarGetAvatarJson(NativeHandle da, ref IntPtr json, ref uint jsonLength);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarGetLogsCount(NativeHandle da, ref uint errors);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarGetLogJson(NativeHandle da, uint index, ref IntPtr message, ref uint messageLength);
-        [DllImport(LIBRARY_NAME)]
-        public static extern StatusCode DeclavatarGetI18n(ref byte i18nKey, uint i18nKeyLength, ref IntPtr i18nJson, ref uint i18nJsonLength);
-    }
-
-    internal enum StatusCode : uint
-    {
-        Success = 0,
-        Utf8Error = 1,
-        CompileError = 2,
-        AlreadyInUse = 3,
-        NotCompiled = 4,
-        InvalidPointer = 128,
-    }
-
-    internal enum ErrorKind : uint
-    {
-        CompilerError = 0,
-        SyntaxError = 1,
-        SemanticError = 2,
-        SemanticInfo = 3,
-
-        // Runtime use only
-        RuntimeError = 1048576,
-    }
-
-    internal enum FormatKind : uint
-    {
-        SExpression = 1,
-        Lua = 2,
-    }
-
-    internal sealed class NativeHandle : SafeHandle
-    {
-        public override bool IsInvalid => handle == IntPtr.Zero;
-
-        private NativeHandle(IntPtr newHandle) : base(IntPtr.Zero, true)
-        {
-            SetHandle(newHandle);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            return Native.DeclavatarFree(handle) == (uint)StatusCode.Success;
-        }
-
-        public static NativeHandle Create()
-        {
-            var newHandle = Native.DeclavatarInit();
-            return new NativeHandle(newHandle);
-        }
-    }
-
-    internal sealed class Plugin : IDisposable
+    internal sealed class DeclavatarPlugin : IDisposable
     {
         private NativeHandle _handle = null;
         private bool _disposed = false;
         private StatusCode _lastCompileResult = StatusCode.NotCompiled;
 
-        public Plugin()
+        public DeclavatarPlugin()
         {
             _handle = NativeHandle.Create();
             if (_handle.IsInvalid) throw new NullReferenceException("failed to create declavatar handle");
@@ -182,5 +103,72 @@ namespace KusakaFactory.Declavatar
             if (disposing) this._handle.Dispose();
             _disposed = true;
         }
+
+        internal static class Native
+        {
+#if UNITY_EDITOR_WIN
+            private const string LIBRARY_NAME = "declavatar.dll";
+#elif UNITY_EDITOR_OSX
+            private const string LIBRARY_NAME = "libdeclavatar.dylib";
+#elif UNITY_EDITOR_LINUX
+            private const string LIBRARY_NAME = "libdeclavatar.so";
+#endif
+
+            [DllImport(LIBRARY_NAME)]
+            public static extern IntPtr DeclavatarInit();
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarFree(IntPtr da);
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarReset(NativeHandle da);
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarAddLibraryPath(NativeHandle da, ref byte path, uint pathLength);
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarCompile(NativeHandle da, ref byte source, uint sourceLength, uint formatKind);
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarGetAvatarJson(NativeHandle da, ref IntPtr json, ref uint jsonLength);
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarGetLogsCount(NativeHandle da, ref uint errors);
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarGetLogJson(NativeHandle da, uint index, ref IntPtr message, ref uint messageLength);
+            [DllImport(LIBRARY_NAME)]
+            public static extern StatusCode DeclavatarGetI18n(ref byte i18nKey, uint i18nKeyLength, ref IntPtr i18nJson, ref uint i18nJsonLength);
+        }
+
+        internal sealed class NativeHandle : SafeHandle
+        {
+            public override bool IsInvalid => handle == IntPtr.Zero;
+
+            private NativeHandle(IntPtr newHandle) : base(IntPtr.Zero, true)
+            {
+                SetHandle(newHandle);
+            }
+
+            protected override bool ReleaseHandle()
+            {
+                return Native.DeclavatarFree(handle) == (uint)StatusCode.Success;
+            }
+
+            public static NativeHandle Create()
+            {
+                var newHandle = Native.DeclavatarInit();
+                return new NativeHandle(newHandle);
+            }
+        }
+
+        internal enum StatusCode : uint
+        {
+            Success = 0,
+            Utf8Error = 1,
+            CompileError = 2,
+            AlreadyInUse = 3,
+            NotCompiled = 4,
+            InvalidPointer = 128,
+        }
+    }
+
+    internal enum FormatKind : uint
+    {
+        SExpression = 1,
+        Lua = 2,
     }
 }

@@ -64,7 +64,7 @@ jobs:
 
       # Make a UnityPackage version of the Package for release
       - name: Create UnityPackage
-        uses: pCYSl5EDgo/create-unitypackage@cb6faa94fc04a08910f00a3301c813a484f23bab
+        uses: kb10uy/create-unitypackage@901ba4b28841bf29cab905a1d611050b4e62d3d0
         with:
           package-path: ${{ env.unityPackage }}
           include-files: metaList

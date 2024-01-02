@@ -1,5 +1,6 @@
 {
     "name": "org.kb10uy.declavatar",
+    "rootNamespace": "",
     "references": [
         "nadena.dev.ndmf",
         "nadena.dev.ndmf.runtime",
@@ -7,8 +8,6 @@
         "nadena.dev.modular-avatar.core.editor",
         "AnimatorAsCode.V1",
         "AnimatorAsCode.V1.VRChat",
-        "AnimatorAsCode.V1.ModularAvatar",
-        "AnimatorAsCode.V1.NDMFProcessor",
         "org.kb10uy.declavatar.runtime"
     ],
     "includePlatforms": [
@@ -22,7 +21,7 @@
         "VRCSDK3A.dll",
         "Newtonsoft.Json.dll"
     ],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

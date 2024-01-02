@@ -1,7 +1,8 @@
 {
     "name": "org.kb10uy.declavatar.runtime",
+    "rootNamespace": "",
     "references": [
-        "GUID:fc900867c0f47cd49b6e2ae4ef907300"
+        "nadena.dev.modular-avatar.core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -10,14 +11,8 @@
     "precompiledReferences": [
         "VRCSDKBase.dll"
     ],
-    "autoReferenced": true,
+    "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [
-        {
-            "name": "Select...",
-            "expression": "",
-            "define": ""
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
@@ -9,17 +8,16 @@ using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
 using KusakaFactory.Declavatar;
-using KusakaFactory.Declavatar.EditorExtension;
+using KusakaFactory.Data;
 using KusakaFactory.Declavatar.Runtime;
 
-[assembly: ExportsPlugin(typeof(DeclavatarProcessor))]
-[assembly: ExportsPlugin(typeof(DeclavatarComponentRemover))]
+[assembly: ExportsPlugin(typeof(DeclavatarNdmfPlugin))]
 namespace KusakaFactory.Declavatar
 {
-    public sealed class DeclavatarProcessor : Plugin<DeclavatarProcessor>
+    public sealed class DeclavatarNdmfPlugin : Plugin<DeclavatarNdmfPlugin>
     {
-        public override string DisplayName => "Declavatar Processor";
-        public override string QualifiedName => "org.kb10uy.declavatar-processor";
+        public override string DisplayName => "Declavatar";
+        public override string QualifiedName => "org.kb10uy.declavatar";
 
         private JsonSerializerSettings _serializerSettings;
         private Localizer _localizer;
@@ -32,19 +30,22 @@ namespace KusakaFactory.Declavatar
             };
             _localizer = ConstructLocalizer();
 
-            InPhase(BuildPhase.Generating).Run("Compile and generate declavatar files", Execute);
+            InPhase(BuildPhase.Generating).Run("Compile and generate declavatar files", ProcessDeclarations);
+            InPhase(BuildPhase.Transforming).Run("Remove declavatar components", RemoveComponents);
         }
 
-        #region Execution
-
-        private void Execute(BuildContext ctx)
+        private void ProcessDeclarations(BuildContext ctx)
         {
             var allChildrenComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar>();
             // TODO: add ordering feature by int
-            foreach (var component in allChildrenComponents)
-            {
-                ProcessForComponent(ctx, component);
-            }
+            foreach (var component in allChildrenComponents) ProcessForComponent(ctx, component);
+        }
+
+        private void RemoveComponents(BuildContext ctx)
+        {
+            var rootObject = ctx.AvatarRootObject;
+            var components = rootObject.GetComponentsInChildren<GenerateByDeclavatar>();
+            foreach (var component in components) UnityEngine.Object.DestroyImmediate(component);
         }
 
         private void ProcessForComponent(BuildContext ctx, GenerateByDeclavatar gbd)
@@ -57,17 +58,14 @@ namespace KusakaFactory.Declavatar
             declavatar.Execute(gbd.GenerateMenuInstaller);
         }
 
-        #endregion
-
-        #region Compilation
-
         private (Data.Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
         {
             using var declavatarPlugin = new DeclavatarCore();
             declavatarPlugin.Reset();
 
             // Load libraries
-            foreach (var libraryPath in GetDeclavatarLibraryPaths()) declavatarPlugin.AddLibraryPath(libraryPath);
+            var configuration = Configuration.LoadEditorUserSettings();
+            foreach (var libraryPath in configuration.EnumerateAbsoluteLibraryPaths()) declavatarPlugin.AddLibraryPath(libraryPath);
 
             // Compile declaration
             var compileResult = declavatarPlugin.Compile(source, format);
@@ -78,23 +76,6 @@ namespace KusakaFactory.Declavatar
             var definition = JsonConvert.DeserializeObject<Data.Avatar>(definitionJson, _serializerSettings);
             return (definition, logs);
         }
-
-        private IEnumerable<string> GetDeclavatarLibraryPaths()
-        {
-            var assetsPath = Application.dataPath;
-            var projectPath = Path.GetDirectoryName(assetsPath);
-            var config = Configuration.LoadEditorUserSettings();
-
-            return config
-                .LibraryRelativePath
-                .Select((p) => p.Trim())
-                .Where((p) => !string.IsNullOrEmpty(p))
-                .Select((p) => Path.Combine(projectPath, p));
-        }
-
-        #endregion
-
-        #region Localization
 
         private static Localizer ConstructLocalizer()
         {
@@ -124,10 +105,6 @@ namespace KusakaFactory.Declavatar
             return JsonConvert.DeserializeObject<Dictionary<string, string>>(asset.text);
         }
 
-        #endregion
-
-        #region Logging
-
         private void ReportLogsForNdmf(List<string> logJsons)
         {
             foreach (var logJson in logJsons)
@@ -142,26 +119,6 @@ namespace KusakaFactory.Declavatar
                 };
                 ErrorReport.ReportError(_localizer, severity, serializedLog.Kind, serializedLog.Args.ToArray());
             }
-        }
-
-        #endregion
-    }
-
-    public class DeclavatarComponentRemover : Plugin<DeclavatarComponentRemover>
-    {
-        public override string DisplayName => "Declavatar Component Remover";
-        public override string QualifiedName => "org.kb10uy.declavatar-component-remover";
-
-        protected override void Configure()
-        {
-            InPhase(BuildPhase.Transforming).Run("Remove Declavatar Components", Execute);
-        }
-
-        private void Execute(BuildContext ctx)
-        {
-            var rootObject = ctx.AvatarRootObject;
-            var components = rootObject.GetComponentsInChildren<GenerateByDeclavatar>();
-            foreach (var component in components) UnityEngine.Object.DestroyImmediate(component);
         }
     }
 }

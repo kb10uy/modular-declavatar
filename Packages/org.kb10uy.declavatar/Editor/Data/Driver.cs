@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.VRC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

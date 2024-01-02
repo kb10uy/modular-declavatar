@@ -4,7 +4,6 @@ using System.Linq;
 using nadena.dev.modular_avatar.core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 namespace KusakaFactory.Declavatar.Data
 {

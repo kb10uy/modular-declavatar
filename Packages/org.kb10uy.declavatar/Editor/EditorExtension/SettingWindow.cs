@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
-using Newtonsoft.Json;
+using KusakaFactory.Data;
 
 namespace KusakaFactory.Declavatar.EditorExtension
 {
@@ -49,33 +49,6 @@ namespace KusakaFactory.Declavatar.EditorExtension
         {
             var config = Configuration.LoadEditorUserSettings();
             _libraryPaths = config.LibraryRelativePath;
-        }
-    }
-
-    internal sealed class Configuration
-    {
-        private const string EDITOR_USER_SETTINGS_KEY = "DeclavatarConfiguration";
-
-        internal string[] LibraryRelativePath;
-
-        internal Configuration()
-        {
-            LibraryRelativePath = new string[]
-            {
-                    "Packages/org.kb10uy.declavatar/Extra",
-            };
-        }
-
-        internal void SaveEditorUserSettings()
-        {
-            var configJson = JsonConvert.SerializeObject(this);
-            EditorUserSettings.SetConfigValue(EDITOR_USER_SETTINGS_KEY, configJson);
-        }
-
-        internal static Configuration LoadEditorUserSettings()
-        {
-            var configJson = EditorUserSettings.GetConfigValue(EDITOR_USER_SETTINGS_KEY);
-            return configJson != null ? JsonConvert.DeserializeObject<Configuration>(configJson) : new Configuration();
         }
     }
 }

@@ -6,13 +6,13 @@ using Newtonsoft.Json;
 
 namespace KusakaFactory.Declavatar
 {
-    internal sealed class DeclavatarPlugin : IDisposable
+    internal sealed class DeclavatarCore : IDisposable
     {
         private NativeHandle _handle = null;
         private bool _disposed = false;
         private StatusCode _lastCompileResult = StatusCode.NotCompiled;
 
-        public DeclavatarPlugin()
+        public DeclavatarCore()
         {
             _handle = NativeHandle.Create();
             if (_handle.IsInvalid) throw new NullReferenceException("failed to create declavatar handle");

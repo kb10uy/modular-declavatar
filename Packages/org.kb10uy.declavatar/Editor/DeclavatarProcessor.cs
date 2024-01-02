@@ -63,7 +63,7 @@ namespace KusakaFactory.Declavatar
 
         private (Data.Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
         {
-            using var declavatarPlugin = new DeclavatarPlugin();
+            using var declavatarPlugin = new DeclavatarCore();
             declavatarPlugin.Reset();
 
             // Load libraries
@@ -108,7 +108,7 @@ namespace KusakaFactory.Declavatar
 
         private static Func<string, string> CreateLocalizerFunc(string locale)
         {
-            var coreLocalization = DeclavatarPlugin.GetLogLocalization(locale);
+            var coreLocalization = DeclavatarCore.GetLogLocalization(locale);
             var runtimeLocalization = GetRuntimeLocalization(locale);
 
             var dictionary = new Dictionary<string, string>(coreLocalization.Union(runtimeLocalization));

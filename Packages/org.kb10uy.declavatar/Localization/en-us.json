@@ -11,12 +11,12 @@
     "runtime.internal.invalid_layer_animation:description": "Invalid animation detected",
     "runtime.internal.invalid_target:description": "Invalid target detected",
 
-    "runtime.animation_not_found": "Runtime Error",
-    "runtime.material_not_found": "Runtime Error",
-    "runtime.localization_not_found": "Runtime Error",
-    "runtime.renderer_not_found": "Runtime Error",
-    "runtime.skinned_renderer_not_found": "Runtime Error",
-    "runtime.object_not_found": "Runtime Error",
+    "runtime.animation_not_found": "External Asset Error",
+    "runtime.material_not_found": "External Asset Error",
+    "runtime.localization_not_found": "External Asset Error",
+    "runtime.renderer_not_found": "In-Avatar Reference Error",
+    "runtime.skinned_renderer_not_found": "In-Avatar Reference Error",
+    "runtime.object_not_found": "In-Avatar Reference Error",
 
     "runtime.animation_not_found:description": "Animation '{0}' not found",
     "runtime.material_not_found:description": "Material '{0}' not found",

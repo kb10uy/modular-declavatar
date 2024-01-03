@@ -55,7 +55,7 @@ namespace KusakaFactory.Declavatar
             if (declaration == null) return;
 
             var declavatar = new Declavatar(new DeclavatarContext(ctx, _localizer, gbd, declaration));
-            declavatar.Execute(gbd.GenerateMenuInstaller);
+            declavatar.Execute();
         }
 
         private (Data.Avatar, List<string>) CompileDeclaration(string source, FormatKind format)

@@ -14,6 +14,7 @@ namespace KusakaFactory.Declavatar
         public GameObject AbsoluteAvatarRoot { get; }
         public GameObject DeclarationRoot { get; }
         public GameObject MenuInstallRoot { get; }
+        public bool CreateMenuInstaller { get; }
 
         public Data.Avatar AvatarDeclaration { get; }
         public AacFlBase Aac { get; }
@@ -40,6 +41,7 @@ namespace KusakaFactory.Declavatar
                 MenuInstallRoot = new GameObject("DeclavatarMenuRoot");
                 MenuInstallRoot.transform.parent = DeclarationRoot.transform;
             }
+            CreateMenuInstaller = gbd.GenerateMenuInstaller;
 
             AvatarDeclaration = avatar;
             Aac = AacV1.Create(new AacConfiguration
@@ -78,16 +80,16 @@ namespace KusakaFactory.Declavatar
             }
             else
             {
-
-                var mr = DeclarationRoot.transform.Find(path)?.GetComponent<Renderer>();
-                if (mr == null)
+                var gameObject = FindGameObject(path);
+                var renderer = gameObject.GetComponent<Renderer>();
+                if (renderer == null)
                 {
-                    ReportRuntimeError("runtime.renderer_not_found", path);
+                    ReportRuntimeError("runtime.renderer_not_found", path, AvatarDeclaration.Name);
                     throw new DeclavatarRuntimeException($"Renderer {path} not found");
                 }
                 _searchedPathCache.Add(cachedPath);
-                _rendererSearchCache[path] = mr;
-                return mr;
+                _rendererSearchCache[path] = renderer;
+                return renderer;
             }
         }
 
@@ -100,15 +102,16 @@ namespace KusakaFactory.Declavatar
             }
             else
             {
-                var smr = DeclarationRoot.transform.Find(path)?.GetComponent<SkinnedMeshRenderer>();
-                if (smr == null)
+                var gameObject = FindGameObject(path);
+                var skinnedMeshRenderer = gameObject.GetComponent<SkinnedMeshRenderer>();
+                if (skinnedMeshRenderer == null)
                 {
-                    ReportRuntimeError("runtime.skinned_renderer_not_found", path);
+                    ReportRuntimeError("runtime.skinned_renderer_not_found", path, AvatarDeclaration.Name);
                     throw new DeclavatarRuntimeException($"SkinnedMeshRenderer {path} not found");
                 }
                 _searchedPathCache.Add(cachedPath);
-                _skinnedMeshRendererSearchCache[path] = smr;
-                return smr;
+                _skinnedMeshRendererSearchCache[path] = skinnedMeshRenderer;
+                return skinnedMeshRenderer;
             }
         }
 
@@ -121,15 +124,15 @@ namespace KusakaFactory.Declavatar
             }
             else
             {
-                var go = DeclarationRoot.transform.Find(path)?.gameObject;
-                if (go == null)
+                var transform = DeclarationRoot.transform.Find(path);
+                if (transform == null)
                 {
-                    ReportRuntimeError("runtime.object_not_found", path);
+                    ReportRuntimeError("runtime.object_not_found", path, AvatarDeclaration.Name);
                     throw new DeclavatarRuntimeException($"GameObject {path} not found");
                 }
                 _searchedPathCache.Add(cachedPath);
-                _gameObjectSearchCache[path] = go;
-                return go;
+                _gameObjectSearchCache[path] = transform.gameObject;
+                return transform.gameObject;
             }
         }
 

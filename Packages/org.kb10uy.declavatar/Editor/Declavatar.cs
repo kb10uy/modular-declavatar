@@ -20,13 +20,13 @@ namespace KusakaFactory.Declavatar
             _context = context;
         }
 
-        public void Execute(bool generateMenuInstaller)
+        public void Execute()
         {
             try
             {
                 GenerateFXLayerNonDestructive();
                 GenerateParametersNonDestructive();
-                GenerateMenuNonDestructive(generateMenuInstaller);
+                GenerateMenuNonDestructive();
             }
             catch (DeclavatarInternalException ex)
             {
@@ -470,9 +470,9 @@ namespace KusakaFactory.Declavatar
 
         #region Menu Generation
 
-        private void GenerateMenuNonDestructive(bool generateMenuInstaller)
+        private void GenerateMenuNonDestructive()
         {
-            if (generateMenuInstaller) _context.MenuInstallRoot.AddComponent<ModularAvatarMenuInstaller>();
+            if (_context.CreateMenuInstaller) _context.MenuInstallRoot.AddComponent<ModularAvatarMenuInstaller>();
             _context.MenuInstallRoot.AddComponent<ModularAvatarMenuGroup>();
 
             foreach (var item in _context.AvatarDeclaration.MenuItems)

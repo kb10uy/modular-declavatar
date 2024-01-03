@@ -4,89 +4,65 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
 using VRC.SDK3.Avatars.Components;
-using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.modular_avatar.core;
 using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.VRC;
 
-namespace KusakaFactory.Declavatar
+namespace KusakaFactory.Declavatar.Processor
 {
-    public sealed class Declavatar
+    public sealed class GenerateControllerPass : IDeclavatarPass
     {
-        private DeclavatarContext _context;
-
-        public Declavatar(DeclavatarContext context)
+        public void Execute(DeclavatarContext context)
         {
-            _context = context;
-        }
+            var fxAnimator = context.Aac.NewAnimatorController();
 
-        public void Execute()
-        {
-            try
-            {
-                GenerateFXLayerNonDestructive();
-                GenerateParametersNonDestructive();
-                GenerateMenuNonDestructive();
-            }
-            catch (DeclavatarInternalException ex)
-            {
-                Debug.LogError(ex.Message);
-            }
-        }
-
-        private void GenerateFXLayerNonDestructive()
-        {
-            var fxAnimator = _context.Aac.NewAnimatorController();
-
-            foreach (var animationGroup in _context.AvatarDeclaration.FxController)
+            foreach (var animationGroup in context.AvatarDeclaration.FxController)
             {
                 switch (animationGroup.Content)
                 {
                     case Data.Layer.GroupLayer g:
-                        GenerateGroupLayer(fxAnimator, animationGroup.Name, g);
+                        GenerateGroupLayer(context, fxAnimator, animationGroup.Name, g);
                         break;
                     case Data.Layer.SwitchLayer s:
-                        GenerateSwitchLayer(fxAnimator, animationGroup.Name, s);
+                        GenerateSwitchLayer(context, fxAnimator, animationGroup.Name, s);
                         break;
                     case Data.Layer.PuppetLayer p:
-                        GeneratePuppetLayer(fxAnimator, animationGroup.Name, p);
+                        GeneratePuppetLayer(context, fxAnimator, animationGroup.Name, p);
                         break;
                     case Data.Layer.RawLayer r:
-                        GenerateRawLayer(fxAnimator, animationGroup.Name, r);
+                        GenerateRawLayer(context, fxAnimator, animationGroup.Name, r);
                         break;
                     default:
-                        _context.ReportInternalError("runtime.internal.invalid_animation_group");
+                        context.ReportInternalError("runtime.internal.invalid_animation_group");
                         break;
                 }
             }
 
             // MEMO: should be absolute path mode?
-            var mergeAnimator = _context.DeclarationRoot.AddComponent<ModularAvatarMergeAnimator>();
+            var mergeAnimator = context.DeclarationRoot.AddComponent<ModularAvatarMergeAnimator>();
             mergeAnimator.animator = fxAnimator.AnimatorController;
             mergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
             mergeAnimator.pathMode = MergeAnimatorPathMode.Relative;
         }
 
-        #region FX Layer Generation
-
-        private void GenerateGroupLayer(AacFlController controller, string name, Data.Layer.GroupLayer g)
+        private void GenerateGroupLayer(DeclavatarContext context, AacFlController controller, string name, Data.Layer.GroupLayer g)
         {
             var layer = controller.NewLayer(name);
             var layerParameter = layer.IntParameter(g.Parameter);
 
             var idleState = layer.NewState("Disabled", 0, 0);
-            WriteStateAnimation(layer, idleState, g.Default.Animation);
+            WriteStateAnimation(context, layer, idleState, g.Default.Animation);
 
             foreach (var option in g.Options)
             {
                 var state = layer.NewState($"{option.Value} {option.Name}", (int)option.Value / 8 + 1, (int)option.Value % 8);
-                WriteStateAnimation(layer, state, option.Animation);
+                WriteStateAnimation(context, layer, state, option.Animation);
                 idleState.TransitionsTo(state).When(layerParameter.IsEqualTo((int)option.Value));
                 state.Exits().When(layerParameter.IsNotEqualTo((int)option.Value));
             }
         }
 
-        private void GenerateSwitchLayer(AacFlController controller, string name, Data.Layer.SwitchLayer s)
+        private void GenerateSwitchLayer(DeclavatarContext context, AacFlController controller, string name, Data.Layer.SwitchLayer s)
         {
             var layer = controller.NewLayer(name);
             var layerParameter = layer.BoolParameter(s.Parameter);
@@ -94,23 +70,23 @@ namespace KusakaFactory.Declavatar
             var disabledState = layer.NewState("Disabled");
             var enabledState = layer.NewState("Enabled");
 
-            WriteStateAnimation(layer, disabledState, s.Disabled);
-            WriteStateAnimation(layer, enabledState, s.Enabled);
+            WriteStateAnimation(context, layer, disabledState, s.Disabled);
+            WriteStateAnimation(context, layer, enabledState, s.Enabled);
 
             disabledState.TransitionsTo(enabledState).When(layerParameter.IsTrue());
             enabledState.TransitionsTo(disabledState).When(layerParameter.IsFalse());
         }
 
-        private void GeneratePuppetLayer(AacFlController controller, string name, Data.Layer.PuppetLayer puppet)
+        private void GeneratePuppetLayer(DeclavatarContext context, AacFlController controller, string name, Data.Layer.PuppetLayer puppet)
         {
             var layer = controller.NewLayer(name);
             var layerParameter = layer.FloatParameter(puppet.Parameter);
 
             var state = layer.NewState(name).MotionTime(layerParameter);
-            WriteStateAnimation(layer, state, puppet.Animation);
+            WriteStateAnimation(context, layer, state, puppet.Animation);
         }
 
-        private void GenerateRawLayer(AacFlController controller, string name, Data.Layer.RawLayer rawLayer)
+        private void GenerateRawLayer(DeclavatarContext context, AacFlController controller, string name, Data.Layer.RawLayer rawLayer)
         {
             var layer = controller.NewLayer(name);
 
@@ -123,7 +99,7 @@ namespace KusakaFactory.Declavatar
                 switch (agState.Animation)
                 {
                     case Data.RawAnimation.Clip clip:
-                        WriteStateAnimation(layer, state, clip.Animation);
+                        WriteStateAnimation(context, layer, state, clip.Animation);
                         if (clip.Speed != null)
                         {
                             var speedParameter = layer.FloatParameter(clip.SpeedBy);
@@ -146,7 +122,7 @@ namespace KusakaFactory.Declavatar
                                     tree.blendParameter = blendTree.Parameters[0];
                                     foreach (var field in blendTree.Fields)
                                     {
-                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), field.Position[0]);
+                                        tree.AddChild(FetchAnimationClipForBlendTree(context, field.Animation), field.Position[0]);
                                     }
                                     break;
                                 case "Simple2D":
@@ -155,7 +131,7 @@ namespace KusakaFactory.Declavatar
                                     tree.blendParameterY = blendTree.Parameters[1];
                                     foreach (var field in blendTree.Fields)
                                     {
-                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
+                                        tree.AddChild(FetchAnimationClipForBlendTree(context, field.Animation), new Vector2(field.Position[0], field.Position[1]));
                                     }
                                     break;
                                 case "Freeform2D":
@@ -164,7 +140,7 @@ namespace KusakaFactory.Declavatar
                                     tree.blendParameterY = blendTree.Parameters[1];
                                     foreach (var field in blendTree.Fields)
                                     {
-                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
+                                        tree.AddChild(FetchAnimationClipForBlendTree(context, field.Animation), new Vector2(field.Position[0], field.Position[1]));
                                     }
                                     break;
                                 case "Cartesian2D":
@@ -173,11 +149,11 @@ namespace KusakaFactory.Declavatar
                                     tree.blendParameterY = blendTree.Parameters[1];
                                     foreach (var field in blendTree.Fields)
                                     {
-                                        tree.AddChild(FetchAnimationClipForBlendTree(field.Animation), new Vector2(field.Position[0], field.Position[1]));
+                                        tree.AddChild(FetchAnimationClipForBlendTree(context, field.Animation), new Vector2(field.Position[0], field.Position[1]));
                                     }
                                     break;
                                 default:
-                                    _context.ReportInternalError("runtime.internal.invalid_blendtree");
+                                    context.ReportInternalError("runtime.internal.invalid_blendtree");
                                     break;
                             }
                         }
@@ -188,7 +164,6 @@ namespace KusakaFactory.Declavatar
                         break;
                 }
             }
-
 
             // Set transitions
             foreach (var transition in rawLayer.Transitions)
@@ -226,47 +201,47 @@ namespace KusakaFactory.Declavatar
                             andTerms.And(layer.FloatParameter(leFloat.Parameter).IsLessThan(leFloat.Value));
                             break;
                         default:
-                            _context.ReportInternalError("runtime.internal.invalid_layer_condition");
+                            context.ReportInternalError("runtime.internal.invalid_layer_condition");
                             break;
                     }
                 }
             }
         }
 
-        private AnimationClip FetchAnimationClipForBlendTree(Data.LayerAnimation animation)
+        private AnimationClip FetchAnimationClipForBlendTree(DeclavatarContext context, Data.LayerAnimation animation)
         {
             switch (animation)
             {
                 case Data.LayerAnimation.Inline inline:
-                    return CreateInlineClip(inline).Clip;
+                    return CreateInlineClip(context, inline).Clip;
                 case Data.LayerAnimation.KeyedInline keyedInline:
-                    return CreateKeyedInlineClip(keyedInline).Clip;
+                    return CreateKeyedInlineClip(context, keyedInline).Clip;
                 case Data.LayerAnimation.External external:
-                    return _context.GetExternalAnimationClip(external.Name);
+                    return context.GetExternalAnimationClip(external.Name);
                 default:
-                    _context.ReportInternalError("runtime.internal.invalid_layer_animation");
+                    context.ReportInternalError("runtime.internal.invalid_layer_animation");
                     throw new DeclavatarInternalException("internal");
             }
         }
 
-        private void WriteStateAnimation(AacFlLayer layer, AacFlState state, Data.LayerAnimation animation)
+        private void WriteStateAnimation(DeclavatarContext context, AacFlLayer layer, AacFlState state, Data.LayerAnimation animation)
         {
             try
             {
                 switch (animation)
                 {
                     case Data.LayerAnimation.Inline inline:
-                        state.WithAnimation(CreateInlineClip(inline));
-                        AppendPerState(layer, state, inline.Targets);
+                        state.WithAnimation(CreateInlineClip(context, inline));
+                        AppendPerState(context, layer, state, inline.Targets);
                         break;
                     case Data.LayerAnimation.KeyedInline keyedInline:
-                        state.WithAnimation(CreateKeyedInlineClip(keyedInline));
+                        state.WithAnimation(CreateKeyedInlineClip(context, keyedInline));
                         break;
                     case Data.LayerAnimation.External external:
-                        state.WithAnimation(_context.GetExternalAnimationClip(external.Name));
+                        state.WithAnimation(context.GetExternalAnimationClip(external.Name));
                         break;
                     default:
-                        _context.ReportInternalError("runtime.internal.invalid_layer_animation");
+                        context.ReportInternalError("runtime.internal.invalid_layer_animation");
                         throw new DeclavatarInternalException("internal");
                 }
             }
@@ -275,9 +250,9 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        private AacFlClip CreateInlineClip(Data.LayerAnimation.Inline inline)
+        private AacFlClip CreateInlineClip(DeclavatarContext context, Data.LayerAnimation.Inline inline)
         {
-            var inlineClip = _context.Aac.NewClip();
+            var inlineClip = context.Aac.NewClip();
             foreach (var target in inline.Targets)
             {
                 try
@@ -285,23 +260,23 @@ namespace KusakaFactory.Declavatar
                     switch (target)
                     {
                         case Data.Target.Shape shape:
-                            var smr = _context.FindSkinnedMeshRenderer(shape.Mesh);
+                            var smr = context.FindSkinnedMeshRenderer(shape.Mesh);
                             inlineClip.BlendShape(smr, shape.Name, shape.Value * 100.0f);
                             break;
                         case Data.Target.Object obj:
-                            var go = _context.FindGameObject(obj.Name);
+                            var go = context.FindGameObject(obj.Name);
                             inlineClip.Toggling(go, obj.Enabled);
                             break;
                         case Data.Target.Material material:
-                            var mr = _context.FindRenderer(material.Mesh);
-                            var targetMaterial = _context.GetExternalMaterial(material.AssetKey);
+                            var mr = context.FindRenderer(material.Mesh);
+                            var targetMaterial = context.GetExternalMaterial(material.AssetKey);
                             inlineClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
                             break;
                         case Data.Target.Drive _:
                         case Data.Target.Tracking _:
                             continue;
                         default:
-                            _context.ReportInternalError("runtime.internal.invalid_target");
+                            context.ReportInternalError("runtime.internal.invalid_target");
                             break;
                     }
                 }
@@ -313,12 +288,12 @@ namespace KusakaFactory.Declavatar
             return inlineClip;
         }
 
-        private AacFlClip CreateKeyedInlineClip(Data.LayerAnimation.KeyedInline keyedInline)
+        private AacFlClip CreateKeyedInlineClip(DeclavatarContext context, Data.LayerAnimation.KeyedInline keyedInline)
         {
             var groups = keyedInline.Keyframes
                 .SelectMany((kf) => kf.Targets.Select((t) => (kf.Value, Target: t)))
                 .GroupBy((p) => Data.VRChatExtension.AsGroupingKey(p.Target));
-            var keyedInlineClip = _context.Aac.NewClip().NonLooping();
+            var keyedInlineClip = context.Aac.NewClip().NonLooping();
             keyedInlineClip.Animating((e) =>
             {
                 foreach (var group in groups)
@@ -328,7 +303,7 @@ namespace KusakaFactory.Declavatar
                         if (group.Key.StartsWith("shape://"))
                         {
                             var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Shape)).ToList();
-                            var smr = _context.FindSkinnedMeshRenderer(points[0].Target.Mesh);
+                            var smr = context.FindSkinnedMeshRenderer(points[0].Target.Mesh);
                             e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
                             {
                                 foreach (var point in points) kfs.Linear(point.Value * 100.0f, point.Target.Value * 100.0f);
@@ -337,7 +312,7 @@ namespace KusakaFactory.Declavatar
                         else if (group.Key.StartsWith("object://"))
                         {
                             var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Object)).ToList();
-                            var go = _context.FindGameObject(points[0].Target.Name);
+                            var go = context.FindGameObject(points[0].Target.Name);
                             e.Animates(go).WithFrameCountUnit((kfs) =>
                             {
                                 foreach (var point in points) kfs.Constant(point.Value * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
@@ -347,13 +322,13 @@ namespace KusakaFactory.Declavatar
                         {
                             // Use traditional API for matarial swapping
                             var points = group.Select((p) => (p.Value, Target: p.Target as Data.Target.Material)).ToList();
-                            var mr = _context.FindRenderer(points[0].Target.Mesh);
+                            var mr = context.FindRenderer(points[0].Target.Mesh);
 
                             var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
                             var keyframes = points.Select((p) => new ObjectReferenceKeyframe
                             {
                                 time = p.Value * 100.0f,
-                                value = _context.GetExternalMaterial(p.Target.AssetKey),
+                                value = context.GetExternalMaterial(p.Target.AssetKey),
                             }).ToArray();
                             AnimationUtility.SetObjectReferenceCurve(keyedInlineClip.Clip, binding, keyframes);
                         }
@@ -366,7 +341,7 @@ namespace KusakaFactory.Declavatar
             return keyedInlineClip;
         }
 
-        private void AppendPerState(AacFlLayer layer, AacFlState state, IReadOnlyList<Data.Target> targets)
+        private void AppendPerState(DeclavatarContext context, AacFlLayer layer, AacFlState state, IReadOnlyList<Data.Target> targets)
         {
             foreach (var target in targets)
             {
@@ -383,7 +358,7 @@ namespace KusakaFactory.Declavatar
                         AppendStateTrackingControl(state, control.Control);
                         break;
                     default:
-                        _context.ReportInternalError("runtime.internal.invalid_target");
+                        context.ReportInternalError("runtime.internal.invalid_target");
                         break;
                 }
             }
@@ -437,214 +412,5 @@ namespace KusakaFactory.Declavatar
                 state.TrackingTracks(Data.VRChatExtension.ConvertToAacTarget(control.Target));
             }
         }
-
-        #endregion
-
-        #region Parameter Generation
-
-        private void GenerateParametersNonDestructive()
-        {
-            // MA Parameters modifies itself and child GameObject
-            // It must be on _rootGameObject
-            var parametersComponent =
-                _context.DeclarationRoot.GetComponent<ModularAvatarParameters>() ??
-                _context.DeclarationRoot.AddComponent<ModularAvatarParameters>();
-
-            var newParameters = _context
-                .AvatarDeclaration
-                .Parameters
-                .Select((pd) => new ParameterConfig
-                {
-                    nameOrPrefix = pd.Name,
-                    syncType = Data.VRChatExtension.ConvertToMASyncType(pd),
-                    defaultValue = Data.VRChatExtension.ConvertToVRCParameterValue(pd.ValueType),
-                    saved = pd.Scope.Save ?? false,
-                    localOnly = pd.Scope.Type != "Synced",
-                    internalParameter = pd.Unique,
-                    isPrefix = false, // TODO: PhysBones prefix
-                });
-            parametersComponent.parameters.AddRange(newParameters);
-        }
-
-        #endregion
-
-        #region Menu Generation
-
-        private void GenerateMenuNonDestructive()
-        {
-            if (_context.CreateMenuInstaller) _context.MenuInstallRoot.AddComponent<ModularAvatarMenuInstaller>();
-            _context.MenuInstallRoot.AddComponent<ModularAvatarMenuGroup>();
-
-            foreach (var item in _context.AvatarDeclaration.MenuItems)
-            {
-                GameObject menuItem;
-                switch (item)
-                {
-                    case Data.MenuItem.SubMenu submenu:
-                        menuItem = GenerateMenuGroupObject(submenu);
-                        break;
-                    case Data.MenuItem.Button button:
-                        menuItem = GenerateMenuButtonObject(button);
-                        break;
-                    case Data.MenuItem.Toggle toggle:
-                        menuItem = GenerateMenuToggleObject(toggle);
-                        break;
-                    case Data.MenuItem.Radial radial:
-                        menuItem = GenerateMenuRadialObject(radial);
-                        break;
-                    case Data.MenuItem.TwoAxis twoAxis:
-                        menuItem = GenerateMenuTwoAxisObject(twoAxis);
-                        break;
-                    case Data.MenuItem.FourAxis fourAxis:
-                        menuItem = GenerateMenuFourAxisObject(fourAxis);
-                        break;
-                    default:
-                        continue;
-                }
-                menuItem.transform.parent = _context.MenuInstallRoot.transform;
-            }
-        }
-
-        private GameObject GenerateMenuGroupObject(Data.MenuItem.SubMenu submenu)
-        {
-            var menuGroupRoot = new GameObject(submenu.Name);
-            var menuItemComponent = menuGroupRoot.AddComponent<ModularAvatarMenuItem>();
-            menuItemComponent.MenuSource = SubmenuSource.Children;
-
-            var control = menuItemComponent.Control;
-            control.type = VRCExpressionsMenu.Control.ControlType.SubMenu;
-            control.name = submenu.Name;
-
-            foreach (var item in submenu.Items)
-            {
-                GameObject menuItem;
-                switch (item)
-                {
-                    case Data.MenuItem.SubMenu submenu2:
-                        menuItem = GenerateMenuGroupObject(submenu2);
-                        break;
-                    case Data.MenuItem.Button button:
-                        menuItem = GenerateMenuButtonObject(button);
-                        break;
-                    case Data.MenuItem.Toggle toggle:
-                        menuItem = GenerateMenuToggleObject(toggle);
-                        break;
-                    case Data.MenuItem.Radial radial:
-                        menuItem = GenerateMenuRadialObject(radial);
-                        break;
-                    case Data.MenuItem.TwoAxis twoAxis:
-                        menuItem = GenerateMenuTwoAxisObject(twoAxis);
-                        break;
-                    case Data.MenuItem.FourAxis fourAxis:
-                        menuItem = GenerateMenuFourAxisObject(fourAxis);
-                        break;
-                    default:
-                        continue;
-                }
-                menuItem.transform.parent = menuGroupRoot.gameObject.transform;
-            }
-
-            return menuGroupRoot;
-        }
-
-        private GameObject GenerateMenuButtonObject(Data.MenuItem.Button button)
-        {
-            var menuItemObject = new GameObject(button.Name);
-            var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
-
-            var control = menuItemComponent.Control;
-            control.type = VRCExpressionsMenu.Control.ControlType.Button;
-            control.name = button.Name;
-            control.parameter = new VRCExpressionsMenu.Control.Parameter { name = button.Parameter };
-            control.value = Data.VRChatExtension.ConvertToVRCParameterValue(button.Value);
-
-            return menuItemObject;
-        }
-
-        private GameObject GenerateMenuToggleObject(Data.MenuItem.Toggle toggle)
-        {
-            var menuItemObject = new GameObject(toggle.Name);
-            var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
-
-            var control = menuItemComponent.Control;
-            control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
-            control.name = toggle.Name;
-            control.parameter = new VRCExpressionsMenu.Control.Parameter { name = toggle.Parameter };
-            control.value = Data.VRChatExtension.ConvertToVRCParameterValue(toggle.Value);
-
-            return menuItemObject;
-        }
-
-        private GameObject GenerateMenuRadialObject(Data.MenuItem.Radial radial)
-        {
-            var menuItemObject = new GameObject(radial.Name);
-            var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
-
-            var control = menuItemComponent.Control;
-            control.type = VRCExpressionsMenu.Control.ControlType.RadialPuppet;
-            control.name = radial.Name;
-            control.subParameters = new VRCExpressionsMenu.Control.Parameter[]
-            {
-                new VRCExpressionsMenu.Control.Parameter { name = radial.Parameter },
-            };
-            control.labels = new VRCExpressionsMenu.Control.Label[]
-            {
-                new VRCExpressionsMenu.Control.Label { name = "Should Insert Label here" },
-            };
-
-            return menuItemObject;
-        }
-
-        private GameObject GenerateMenuTwoAxisObject(Data.MenuItem.TwoAxis twoAxis)
-        {
-            var menuItemObject = new GameObject(twoAxis.Name);
-            var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
-
-            var control = menuItemComponent.Control;
-            control.type = VRCExpressionsMenu.Control.ControlType.TwoAxisPuppet;
-            control.name = twoAxis.Name;
-            control.subParameters = new[]
-            {
-                new VRCExpressionsMenu.Control.Parameter { name = twoAxis.HorizontalAxis.Parameter },
-                new VRCExpressionsMenu.Control.Parameter { name = twoAxis.VerticalAxis.Parameter },
-            };
-            control.labels = new[]
-            {
-                new VRCExpressionsMenu.Control.Label { name = twoAxis.VerticalAxis.LabelPositive },
-                new VRCExpressionsMenu.Control.Label { name = twoAxis.HorizontalAxis.LabelPositive },
-                new VRCExpressionsMenu.Control.Label { name = twoAxis.VerticalAxis.LabelNegative },
-                new VRCExpressionsMenu.Control.Label { name = twoAxis.HorizontalAxis.LabelNegative },
-            };
-
-            return menuItemObject;
-        }
-
-        private GameObject GenerateMenuFourAxisObject(Data.MenuItem.FourAxis fourAxis)
-        {
-            var menuItemObject = new GameObject(fourAxis.Name);
-            var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
-
-            var control = menuItemComponent.Control;
-            control.type = VRCExpressionsMenu.Control.ControlType.FourAxisPuppet;
-            control.name = fourAxis.Name;
-            control.subParameters = new VRCExpressionsMenu.Control.Parameter[]
-            {
-                new VRCExpressionsMenu.Control.Parameter { name = fourAxis.UpAxis.Parameter },
-                new VRCExpressionsMenu.Control.Parameter { name = fourAxis.RightAxis.Parameter },
-                new VRCExpressionsMenu.Control.Parameter { name = fourAxis.DownAxis.Parameter },
-                new VRCExpressionsMenu.Control.Parameter { name = fourAxis.LeftAxis.Parameter },
-            };
-            control.labels = new VRCExpressionsMenu.Control.Label[]
-            {
-                new VRCExpressionsMenu.Control.Label { name = fourAxis.UpAxis.Label },
-                new VRCExpressionsMenu.Control.Label { name = fourAxis.RightAxis.Label },
-                new VRCExpressionsMenu.Control.Label { name = fourAxis.DownAxis.Label },
-                new VRCExpressionsMenu.Control.Label { name = fourAxis.LeftAxis.Label },
-            };
-
-            return menuItemObject;
-        }
-
-        #endregion
     }
 }

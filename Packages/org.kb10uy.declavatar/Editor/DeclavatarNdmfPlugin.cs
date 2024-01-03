@@ -10,6 +10,7 @@ using nadena.dev.ndmf.localization;
 using KusakaFactory.Declavatar;
 using KusakaFactory.Data;
 using KusakaFactory.Declavatar.Runtime;
+using KusakaFactory.Declavatar.Processor;
 
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfPlugin))]
 namespace KusakaFactory.Declavatar
@@ -21,6 +22,7 @@ namespace KusakaFactory.Declavatar
 
         private Localizer _localizer;
         private JsonSerializerSettings _serializerSettings;
+        private IDeclavatarPass[] _passes;
 
         protected override void Configure()
         {
@@ -28,6 +30,12 @@ namespace KusakaFactory.Declavatar
             _serializerSettings = new JsonSerializerSettings
             {
                 ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() }
+            };
+            _passes = new IDeclavatarPass[]
+            {
+                new GenerateControllerPass(),
+                new GenerateParameterPass(),
+                new GenerateMenuPass(),
             };
 
             InPhase(BuildPhase.Generating).Run("Compile and generate declavatar files", ProcessDeclarations);
@@ -54,8 +62,8 @@ namespace KusakaFactory.Declavatar
             ReportLogsForNdmf(logs);
             if (declaration == null) return;
 
-            var declavatar = new Declavatar(new DeclavatarContext(ctx, _localizer, gbd, declaration));
-            declavatar.Execute();
+            var context = new DeclavatarContext(ctx, _localizer, gbd, declaration);
+            foreach (var pass in _passes) pass.Execute(context);
         }
 
         private (Data.Avatar, List<string>) CompileDeclaration(string source, FormatKind format)

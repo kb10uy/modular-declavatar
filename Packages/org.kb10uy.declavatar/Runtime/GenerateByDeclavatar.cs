@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using VRC.SDKBase;
+using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 namespace KusakaFactory.Declavatar.Runtime
 {
@@ -17,6 +19,18 @@ namespace KusakaFactory.Declavatar.Runtime
         {
             SExpression = 1,
             Lua = 2,
+        }
+
+        public class CompiledDeclavatar : MonoBehaviour, IEditorOnly
+        {
+            public Avatar CompiledAvatar;
+            public Dictionary<string, Material> ExternalMaterials;
+            public Dictionary<string, AnimationClip> ExternalAnimationClips;
+            public Dictionary<string, string> ExternalLocalizations;
+
+            public GameObject DeclarationRoot;
+            public GameObject MenuInstallTarget;
+            public bool CreateMenuInstallerComponent = false;
         }
     }
 }

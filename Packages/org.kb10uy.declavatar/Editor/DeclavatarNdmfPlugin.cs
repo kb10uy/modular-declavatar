@@ -38,33 +38,32 @@ namespace KusakaFactory.Declavatar
                 new GenerateMenuPass(),
             };
 
-            InPhase(BuildPhase.Generating).Run("Compile and generate declavatar files", ProcessDeclarations);
+            InPhase(BuildPhase.Resolving).Run("Compile declaration files", CompileAllDeclarations);
+            InPhase(BuildPhase.Generating).Run("Process declaration elements", ProcessDeclarations);
             InPhase(BuildPhase.Transforming).Run("Remove declavatar components", RemoveComponents);
         }
 
-        private void ProcessDeclarations(BuildContext ctx)
-        {
-            var allChildrenComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar>();
-            // TODO: add ordering feature by int
-            foreach (var component in allChildrenComponents) ProcessForComponent(ctx, component);
-        }
+        #region Compile declavatar files
 
-        private void RemoveComponents(BuildContext ctx)
+        private void CompileAllDeclarations(BuildContext ctx)
         {
-            var rootObject = ctx.AvatarRootObject;
-            var components = rootObject.GetComponentsInChildren<GenerateByDeclavatar>();
-            foreach (var component in components) UnityEngine.Object.DestroyImmediate(component);
-        }
+            var declavatarComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar>();
+            foreach (var component in declavatarComponents)
+            {
+                if (component.Definition == null) return;
+                var (declaration, logs) = CompileDeclaration(component.Definition.text, (FormatKind)component.Format);
+                ReportLogsForNdmf(logs);
+                if (declaration == null) return;
 
-        private void ProcessForComponent(BuildContext ctx, GenerateByDeclavatar gbd)
-        {
-            if (gbd.Definition == null) return;
-            var (declaration, logs) = CompileDeclaration(gbd.Definition.text, (FormatKind)gbd.Format);
-            ReportLogsForNdmf(logs);
-            if (declaration == null) return;
+                var compiledComponent = component.gameObject.AddComponent<GenerateByDeclavatar.CompiledDeclavatar>();
+                compiledComponent.CompiledAvatar = declaration;
+                compiledComponent.DeclarationRoot = component.DeclarationRoot;
+                compiledComponent.MenuInstallTarget = component.InstallTarget;
+                compiledComponent.CreateMenuInstallerComponent = component.GenerateMenuInstaller;
+                AggregateExternalAssets(compiledComponent, component.ExternalAssets);
+            }
 
-            var context = new DeclavatarContext(ctx, _localizer, gbd, declaration);
-            foreach (var pass in _passes) pass.Execute(context);
+            foreach (var component in declavatarComponents) UnityEngine.Object.DestroyImmediate(component);
         }
 
         private (Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
@@ -85,6 +84,56 @@ namespace KusakaFactory.Declavatar
             var definition = JsonConvert.DeserializeObject<Avatar>(definitionJson, _serializerSettings);
             return (definition, logs);
         }
+
+        private void AggregateExternalAssets(GenerateByDeclavatar.CompiledDeclavatar compiled, ExternalAsset[] externalAssets)
+        {
+            foreach (var externalAsset in externalAssets.Where((ea) => ea != null))
+            {
+                var validMaterials = externalAsset
+                    .Materials
+                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && p.Material != null);
+                var validAnimationClips = externalAsset
+                    .Animations
+                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && p.Animation != null);
+                var validLocalizations = externalAsset
+                    .Localizations
+                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && !string.IsNullOrWhiteSpace(p.Localization));
+
+                foreach (var pair in validMaterials) compiled.ExternalMaterials.Add(pair.Key, pair.Material);
+                foreach (var pair in validAnimationClips) compiled.ExternalAnimationClips.Add(pair.Key, pair.Animation);
+                foreach (var pair in validLocalizations) compiled.ExternalLocalizations.Add(pair.Key, pair.Localization);
+            }
+        }
+
+        #endregion
+
+        #region Process declaration elements
+
+        private void ProcessDeclarations(BuildContext ctx)
+        {
+            var compiledComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar.CompiledDeclavatar>();
+            // TODO: add ordering feature by int
+            foreach (var component in compiledComponents) ProcessForComponent(ctx, component);
+        }
+
+        private void ProcessForComponent(BuildContext ctx, GenerateByDeclavatar.CompiledDeclavatar compiled)
+        {
+            var context = new DeclavatarContext(ctx, _localizer, compiled);
+            foreach (var pass in _passes) pass.Execute(context);
+        }
+
+        #endregion
+
+        #region Remove declavatar components
+
+        private void RemoveComponents(BuildContext ctx)
+        {
+            var rootObject = ctx.AvatarRootObject;
+            var components = rootObject.GetComponentsInChildren<GenerateByDeclavatar.CompiledDeclavatar>();
+            foreach (var component in components) UnityEngine.Object.DestroyImmediate(component);
+        }
+
+        #endregion
 
         private void ReportLogsForNdmf(List<string> logJsons)
         {

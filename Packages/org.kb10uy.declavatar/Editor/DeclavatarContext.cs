@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using nadena.dev.ndmf;
@@ -29,22 +28,25 @@ namespace KusakaFactory.Declavatar
         private Dictionary<string, GameObject> _gameObjectSearchCache;
         private HashSet<string> _searchedPathCache;
 
-        public DeclavatarContext(BuildContext ndmfContext, Localizer localizer, GenerateByDeclavatar gbd, Avatar avatar)
+        public DeclavatarContext(BuildContext ndmfContext, Localizer localizer, GenerateByDeclavatar.CompiledDeclavatar compiled)
         {
-            AbsoluteAvatarRoot = ndmfContext.AvatarRootObject;
-            DeclarationRoot = gbd.DeclarationRoot != null ? gbd.DeclarationRoot : gbd.gameObject;
-            if (gbd.InstallTarget != null)
+            AvatarDeclaration = compiled.CompiledAvatar;
+            _externalMaterials = compiled.ExternalMaterials;
+            _externalAnimationClips = compiled.ExternalAnimationClips;
+            _externalLocalizations = compiled.ExternalLocalizations;
+            CreateMenuInstaller = compiled.CreateMenuInstallerComponent;
+            DeclarationRoot = compiled.DeclarationRoot != null ? compiled.DeclarationRoot : compiled.gameObject;
+            if (compiled.MenuInstallTarget != null)
             {
-                MenuInstallRoot = gbd.InstallTarget;
+                MenuInstallRoot = compiled.MenuInstallTarget;
             }
             else
             {
                 MenuInstallRoot = new GameObject("DeclavatarMenuRoot");
                 MenuInstallRoot.transform.parent = DeclarationRoot.transform;
             }
-            CreateMenuInstaller = gbd.GenerateMenuInstaller;
 
-            AvatarDeclaration = avatar;
+            AbsoluteAvatarRoot = ndmfContext.AvatarRootObject;
             Aac = AacV1.Create(new AacConfiguration
             {
                 // MEMO: should it use avatar name from decl file?
@@ -61,15 +63,10 @@ namespace KusakaFactory.Declavatar
             });
 
             _localizer = localizer;
-            _externalMaterials = new Dictionary<string, Material>();
-            _externalAnimationClips = new Dictionary<string, AnimationClip>();
-            _externalLocalizations = new Dictionary<string, string>();
             _rendererSearchCache = new Dictionary<string, Renderer>();
             _skinnedMeshRendererSearchCache = new Dictionary<string, SkinnedMeshRenderer>();
             _gameObjectSearchCache = new Dictionary<string, GameObject>();
             _searchedPathCache = new HashSet<string>();
-
-            ConstructExternalResources(gbd.ExternalAssets);
         }
 
         public Renderer FindRenderer(string path)
@@ -166,26 +163,6 @@ namespace KusakaFactory.Declavatar
         public void ReportInternalError(string errorKey, params object[] args)
         {
             ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, errorKey, args);
-        }
-
-        private void ConstructExternalResources(ExternalAsset[] externalAssets)
-        {
-            foreach (var externalAsset in externalAssets.Where((ea) => ea != null))
-            {
-                var validMaterials = externalAsset
-                    .Materials
-                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && p.Material != null);
-                var validAnimationClips = externalAsset
-                    .Animations
-                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && p.Animation != null);
-                var validLocalizations = externalAsset
-                    .Localizations
-                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && !string.IsNullOrWhiteSpace(p.Localization));
-
-                foreach (var pair in validMaterials) _externalMaterials.Add(pair.Key, pair.Material);
-                foreach (var pair in validAnimationClips) _externalAnimationClips.Add(pair.Key, pair.Animation);
-                foreach (var pair in validLocalizations) _externalLocalizations.Add(pair.Key, pair.Localization);
-            }
         }
     }
 }

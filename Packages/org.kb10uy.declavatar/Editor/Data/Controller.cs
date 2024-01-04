@@ -1,3 +1,0 @@
-﻿namespace KusakaFactory.Declavatar.Data
-{
-}

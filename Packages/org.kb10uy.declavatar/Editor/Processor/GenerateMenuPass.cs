@@ -1,6 +1,7 @@
 using UnityEngine;
 using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.modular_avatar.core;
+using KusakaFactory.Declavatar.Runtime.Data;
 
 namespace KusakaFactory.Declavatar.Processor
 {
@@ -16,22 +17,22 @@ namespace KusakaFactory.Declavatar.Processor
                 GameObject menuItem;
                 switch (item)
                 {
-                    case Data.MenuItem.SubMenu submenu:
+                    case MenuItem.SubMenu submenu:
                         menuItem = GenerateMenuGroupObject(submenu);
                         break;
-                    case Data.MenuItem.Button button:
+                    case MenuItem.Button button:
                         menuItem = GenerateMenuButtonObject(button);
                         break;
-                    case Data.MenuItem.Toggle toggle:
+                    case MenuItem.Toggle toggle:
                         menuItem = GenerateMenuToggleObject(toggle);
                         break;
-                    case Data.MenuItem.Radial radial:
+                    case MenuItem.Radial radial:
                         menuItem = GenerateMenuRadialObject(radial);
                         break;
-                    case Data.MenuItem.TwoAxis twoAxis:
+                    case MenuItem.TwoAxis twoAxis:
                         menuItem = GenerateMenuTwoAxisObject(twoAxis);
                         break;
-                    case Data.MenuItem.FourAxis fourAxis:
+                    case MenuItem.FourAxis fourAxis:
                         menuItem = GenerateMenuFourAxisObject(fourAxis);
                         break;
                     default:
@@ -41,7 +42,7 @@ namespace KusakaFactory.Declavatar.Processor
             }
         }
 
-        private GameObject GenerateMenuGroupObject(Data.MenuItem.SubMenu submenu)
+        private GameObject GenerateMenuGroupObject(MenuItem.SubMenu submenu)
         {
             var menuGroupRoot = new GameObject(submenu.Name);
             var menuItemComponent = menuGroupRoot.AddComponent<ModularAvatarMenuItem>();
@@ -56,22 +57,22 @@ namespace KusakaFactory.Declavatar.Processor
                 GameObject menuItem;
                 switch (item)
                 {
-                    case Data.MenuItem.SubMenu submenu2:
+                    case MenuItem.SubMenu submenu2:
                         menuItem = GenerateMenuGroupObject(submenu2);
                         break;
-                    case Data.MenuItem.Button button:
+                    case MenuItem.Button button:
                         menuItem = GenerateMenuButtonObject(button);
                         break;
-                    case Data.MenuItem.Toggle toggle:
+                    case MenuItem.Toggle toggle:
                         menuItem = GenerateMenuToggleObject(toggle);
                         break;
-                    case Data.MenuItem.Radial radial:
+                    case MenuItem.Radial radial:
                         menuItem = GenerateMenuRadialObject(radial);
                         break;
-                    case Data.MenuItem.TwoAxis twoAxis:
+                    case MenuItem.TwoAxis twoAxis:
                         menuItem = GenerateMenuTwoAxisObject(twoAxis);
                         break;
-                    case Data.MenuItem.FourAxis fourAxis:
+                    case MenuItem.FourAxis fourAxis:
                         menuItem = GenerateMenuFourAxisObject(fourAxis);
                         break;
                     default:
@@ -83,7 +84,7 @@ namespace KusakaFactory.Declavatar.Processor
             return menuGroupRoot;
         }
 
-        private GameObject GenerateMenuButtonObject(Data.MenuItem.Button button)
+        private GameObject GenerateMenuButtonObject(MenuItem.Button button)
         {
             var menuItemObject = new GameObject(button.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -92,12 +93,12 @@ namespace KusakaFactory.Declavatar.Processor
             control.type = VRCExpressionsMenu.Control.ControlType.Button;
             control.name = button.Name;
             control.parameter = new VRCExpressionsMenu.Control.Parameter { name = button.Parameter };
-            control.value = Data.VRChatExtension.ConvertToVRCParameterValue(button.Value);
+            control.value = button.Value.ConvertToVRCParameterValue();
 
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuToggleObject(Data.MenuItem.Toggle toggle)
+        private GameObject GenerateMenuToggleObject(MenuItem.Toggle toggle)
         {
             var menuItemObject = new GameObject(toggle.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -106,12 +107,12 @@ namespace KusakaFactory.Declavatar.Processor
             control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
             control.name = toggle.Name;
             control.parameter = new VRCExpressionsMenu.Control.Parameter { name = toggle.Parameter };
-            control.value = Data.VRChatExtension.ConvertToVRCParameterValue(toggle.Value);
+            control.value = toggle.Value.ConvertToVRCParameterValue();
 
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuRadialObject(Data.MenuItem.Radial radial)
+        private GameObject GenerateMenuRadialObject(MenuItem.Radial radial)
         {
             var menuItemObject = new GameObject(radial.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -131,7 +132,7 @@ namespace KusakaFactory.Declavatar.Processor
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuTwoAxisObject(Data.MenuItem.TwoAxis twoAxis)
+        private GameObject GenerateMenuTwoAxisObject(MenuItem.TwoAxis twoAxis)
         {
             var menuItemObject = new GameObject(twoAxis.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();
@@ -155,7 +156,7 @@ namespace KusakaFactory.Declavatar.Processor
             return menuItemObject;
         }
 
-        private GameObject GenerateMenuFourAxisObject(Data.MenuItem.FourAxis fourAxis)
+        private GameObject GenerateMenuFourAxisObject(MenuItem.FourAxis fourAxis)
         {
             var menuItemObject = new GameObject(fourAxis.Name);
             var menuItemComponent = menuItemObject.AddComponent<ModularAvatarMenuItem>();

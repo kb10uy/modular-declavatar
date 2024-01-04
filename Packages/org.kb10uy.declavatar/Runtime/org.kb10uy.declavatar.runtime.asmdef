@@ -1,15 +1,14 @@
 {
     "name": "org.kb10uy.declavatar.runtime",
     "rootNamespace": "",
-    "references": [
-        "nadena.dev.modular-avatar.core"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
-        "VRCSDKBase.dll"
+        "VRCSDKBase.dll",
+        "Newtonsoft.Json.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

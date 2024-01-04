@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace KusakaFactory.Declavatar.Data
+namespace KusakaFactory.Declavatar.Runtime.Data
 {
-
     [JsonConverter(typeof(Converters.MenuItemConverter))]
     public abstract class MenuItem
     {

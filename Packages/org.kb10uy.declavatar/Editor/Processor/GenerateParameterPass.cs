@@ -19,8 +19,8 @@ namespace KusakaFactory.Declavatar.Processor
                 .Select((pd) => new ParameterConfig
                 {
                     nameOrPrefix = pd.Name,
-                    syncType = Data.VRChatExtension.ConvertToMASyncType(pd),
-                    defaultValue = Data.VRChatExtension.ConvertToVRCParameterValue(pd.ValueType),
+                    syncType = pd.ConvertToMASyncType(),
+                    defaultValue = pd.ValueType.ConvertToVRCParameterValue(),
                     saved = pd.Scope.Save ?? false,
                     localOnly = pd.Scope.Type != "Synced",
                     internalParameter = pd.Unique,

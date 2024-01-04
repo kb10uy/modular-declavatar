@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace KusakaFactory.Declavatar.Data
+namespace KusakaFactory.Declavatar
 {
     public class SerializedLog
     {

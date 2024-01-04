@@ -6,6 +6,7 @@ using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
 using AnimatorAsCode.V1;
 using KusakaFactory.Declavatar.Runtime;
+using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 namespace KusakaFactory.Declavatar
 {
@@ -16,7 +17,7 @@ namespace KusakaFactory.Declavatar
         public GameObject MenuInstallRoot { get; }
         public bool CreateMenuInstaller { get; }
 
-        public Data.Avatar AvatarDeclaration { get; }
+        public Avatar AvatarDeclaration { get; }
         public AacFlBase Aac { get; }
 
         private Localizer _localizer;
@@ -28,7 +29,7 @@ namespace KusakaFactory.Declavatar
         private Dictionary<string, GameObject> _gameObjectSearchCache;
         private HashSet<string> _searchedPathCache;
 
-        public DeclavatarContext(BuildContext ndmfContext, Localizer localizer, GenerateByDeclavatar gbd, Data.Avatar avatar)
+        public DeclavatarContext(BuildContext ndmfContext, Localizer localizer, GenerateByDeclavatar gbd, Avatar avatar)
         {
             AbsoluteAvatarRoot = ndmfContext.AvatarRootObject;
             DeclarationRoot = gbd.DeclarationRoot != null ? gbd.DeclarationRoot : gbd.gameObject;

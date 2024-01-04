@@ -8,9 +8,9 @@ using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
 using KusakaFactory.Declavatar;
-using KusakaFactory.Data;
 using KusakaFactory.Declavatar.Runtime;
 using KusakaFactory.Declavatar.Processor;
+using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfPlugin))]
 namespace KusakaFactory.Declavatar
@@ -58,6 +58,7 @@ namespace KusakaFactory.Declavatar
 
         private void ProcessForComponent(BuildContext ctx, GenerateByDeclavatar gbd)
         {
+            if (gbd.Definition == null) return;
             var (declaration, logs) = CompileDeclaration(gbd.Definition.text, (FormatKind)gbd.Format);
             ReportLogsForNdmf(logs);
             if (declaration == null) return;
@@ -66,7 +67,7 @@ namespace KusakaFactory.Declavatar
             foreach (var pass in _passes) pass.Execute(context);
         }
 
-        private (Data.Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
+        private (Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
         {
             using var declavatarPlugin = new DeclavatarCore();
             declavatarPlugin.Reset();
@@ -81,7 +82,7 @@ namespace KusakaFactory.Declavatar
             if (!compileResult) return (null, logs);
 
             var definitionJson = declavatarPlugin.GetAvatarJson();
-            var definition = JsonConvert.DeserializeObject<Data.Avatar>(definitionJson, _serializerSettings);
+            var definition = JsonConvert.DeserializeObject<Avatar>(definitionJson, _serializerSettings);
             return (definition, logs);
         }
 
@@ -89,7 +90,7 @@ namespace KusakaFactory.Declavatar
         {
             foreach (var logJson in logJsons)
             {
-                var serializedLog = JsonConvert.DeserializeObject<Data.SerializedLog>(logJson, _serializerSettings);
+                var serializedLog = JsonConvert.DeserializeObject<SerializedLog>(logJson, _serializerSettings);
                 var severity = serializedLog.Severity switch
                 {
                     "Information" => ErrorSeverity.Information,

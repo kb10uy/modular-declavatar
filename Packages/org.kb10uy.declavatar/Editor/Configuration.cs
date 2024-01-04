@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 using Newtonsoft.Json;
 
-namespace KusakaFactory.Data
+namespace KusakaFactory.Declavatar
 {
     internal sealed class Configuration
     {

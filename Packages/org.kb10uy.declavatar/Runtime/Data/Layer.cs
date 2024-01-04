@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using nadena.dev.modular_avatar.core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace KusakaFactory.Declavatar.Data
+namespace KusakaFactory.Declavatar.Runtime.Data
 {
     [JsonConverter(typeof(Converters.LayerConverter))]
     public sealed class Layer
@@ -416,43 +415,6 @@ namespace KusakaFactory.Declavatar.Data
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
             {
                 throw new NotImplementedException();
-            }
-        }
-    }
-
-    public static partial class VRChatExtension
-    {
-        public static string AsGroupingKey(this Target target)
-        {
-            switch (target)
-            {
-                case Target.Shape s: return $"shape://{s.Mesh}/{s.Name}";
-                case Target.Object o: return $"object://{o.Name}";
-                case Target.Material m: return $"material://{m.Mesh}/{m.Slot}";
-                default: throw new ArgumentException("invalid target type");
-            }
-        }
-
-        public static float ConvertToVRCParameterValue(this ParameterType value)
-        {
-            switch (value.Type)
-            {
-                case "Int": return (float)(long)value.Default;
-                case "Float": return (float)(double)value.Default;
-                case "Bool": return (bool)value.Default ? 1.0f : 0.0f;
-                default: throw new ArgumentException("invalid parameter type");
-            }
-        }
-
-        public static ParameterSyncType ConvertToMASyncType(this Parameter parameter)
-        {
-            if (parameter.Scope.Type == "Internal") return ParameterSyncType.NotSynced;
-            switch (parameter.ValueType.Type)
-            {
-                case "Int": return ParameterSyncType.Int;
-                case "Float": return ParameterSyncType.Float;
-                case "Bool": return ParameterSyncType.Bool;
-                default: throw new ArgumentException("invalid parameter type");
             }
         }
     }

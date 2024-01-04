@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Linq;
-using AnimatorAsCode.V1.VRC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace KusakaFactory.Declavatar.Data
+namespace KusakaFactory.Declavatar.Runtime.Data
 {
     [JsonConverter(typeof(Converters.ParameterDriveConverter))]
     public abstract class ParameterDrive
@@ -116,27 +115,6 @@ namespace KusakaFactory.Declavatar.Data
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
             {
                 throw new NotImplementedException();
-            }
-        }
-    }
-
-    public static partial class VRChatExtension
-    {
-        public static AacAv3.Av3TrackingElement ConvertToAacTarget(this string target)
-        {
-            switch (target)
-            {
-                case "Head": return AacAv3.Av3TrackingElement.Head;
-                case "Hip": return AacAv3.Av3TrackingElement.Hip;
-                case "Eyes": return AacAv3.Av3TrackingElement.Eyes;
-                case "Mouth": return AacAv3.Av3TrackingElement.Mouth;
-                case "HandLeft": return AacAv3.Av3TrackingElement.LeftHand;
-                case "HandRight": return AacAv3.Av3TrackingElement.RightHand;
-                case "FootLeft": return AacAv3.Av3TrackingElement.LeftFoot;
-                case "FoorRight": return AacAv3.Av3TrackingElement.RightFoot;
-                case "FingersLeft": return AacAv3.Av3TrackingElement.LeftFingers;
-                case "FingersRight": return AacAv3.Av3TrackingElement.RightFingers;
-                default: throw new JsonException("invalid tracking element");
             }
         }
     }

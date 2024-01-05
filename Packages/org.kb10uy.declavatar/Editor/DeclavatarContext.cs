@@ -1,13 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
 using AnimatorAsCode.V1;
 using KusakaFactory.Declavatar.Runtime;
-using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
-using System.Linq;
 using KusakaFactory.Declavatar.Runtime.Data;
+using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 namespace KusakaFactory.Declavatar
 {
@@ -172,12 +172,12 @@ namespace KusakaFactory.Declavatar
 
     public sealed class DeclavatarExports
     {
-        private List<string> _gates;
+        private HashSet<string> _gates;
         private Dictionary<string, List<string>> _guards;
 
         public DeclavatarExports(GenerateByDeclavatar.CompiledDeclavatar[] compiledComponents)
         {
-            _gates = new List<string>();
+            _gates = new HashSet<string>();
             _guards = new Dictionary<string, List<string>>();
             ConstructGatesAndGuards(compiledComponents);
         }
@@ -209,8 +209,7 @@ namespace KusakaFactory.Declavatar
 
             foreach (var gateName in gateExportNames)
             {
-                _gates.Add(gateName);
-                _guards.Add(gateName, new List<string>());
+                if (_gates.Add(gateName)) _guards.Add(gateName, new List<string>());
             }
             foreach (var guardGroup in guardExportGroups)
             {

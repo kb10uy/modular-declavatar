@@ -1,7 +1,6 @@
 using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 namespace KusakaFactory.Declavatar.Runtime.Data
 {
@@ -39,7 +38,6 @@ namespace KusakaFactory.Declavatar.Runtime.Data
                 var obj = JObject.Load(reader) as JToken;
 
                 var contentObject = obj["content"] as JObject;
-                Debug.Log(contentObject);
                 switch (obj["type"].Value<string>())
                 {
                     case "Gate": return new ExportItem.GateExport { Name = contentObject["name"].Value<string>() };

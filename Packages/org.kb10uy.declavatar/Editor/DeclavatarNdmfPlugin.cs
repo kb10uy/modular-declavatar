@@ -8,8 +8,8 @@ using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
 using KusakaFactory.Declavatar;
-using KusakaFactory.Declavatar.Runtime;
 using KusakaFactory.Declavatar.Processor;
+using KusakaFactory.Declavatar.Runtime;
 using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfPlugin))]

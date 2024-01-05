@@ -5,7 +5,7 @@ using KusakaFactory.Declavatar.Runtime.Data;
 
 namespace KusakaFactory.Declavatar.Processor
 {
-    public sealed class GenerateParameterPass : IDeclavatarPass
+    internal sealed class GenerateParameterPass : IDeclavatarPass
     {
         public void Execute(DeclavatarContext context)
         {

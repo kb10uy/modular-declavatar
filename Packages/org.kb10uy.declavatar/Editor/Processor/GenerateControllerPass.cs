@@ -11,7 +11,7 @@ using KusakaFactory.Declavatar.Runtime.Data;
 
 namespace KusakaFactory.Declavatar.Processor
 {
-    public sealed class GenerateControllerPass : IDeclavatarPass
+    internal sealed class GenerateControllerPass : IDeclavatarPass
     {
         public void Execute(DeclavatarContext context)
         {

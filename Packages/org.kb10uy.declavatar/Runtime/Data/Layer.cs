@@ -203,9 +203,9 @@ namespace KusakaFactory.Declavatar.Runtime.Data
         }
     }
 
-    public static partial class Converters
+    internal static partial class Converters
     {
-        public sealed class LayerConverter : JsonConverter
+        internal sealed class LayerConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
@@ -257,7 +257,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             }
         }
 
-        public sealed class LayerAnimationConverter : JsonConverter
+        internal sealed class LayerAnimationConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
@@ -290,7 +290,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             }
         }
 
-        public sealed class RawAnimationConverter : JsonConverter
+        internal sealed class RawAnimationConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
@@ -336,7 +336,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             }
         }
 
-        public sealed class LayerBlendTreeFieldConverter : JsonConverter
+        internal sealed class LayerBlendTreeFieldConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
@@ -357,7 +357,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             }
         }
 
-        public sealed class RawConditionConverter : JsonConverter
+        internal sealed class RawConditionConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
@@ -394,7 +394,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             }
         }
 
-        public sealed class TargetConverter : JsonConverter
+        internal sealed class TargetConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {

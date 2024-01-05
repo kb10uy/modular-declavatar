@@ -1,12 +1,12 @@
+using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
-using UnityEngine;
 using KusakaFactory.Declavatar.Runtime;
 
 namespace KusakaFactory.Declavatar.EditorExtension
 {
     [CustomEditor(typeof(ExternalAsset))]
-    public sealed class ExternalAssetInspector : Editor
+    internal sealed class ExternalAssetInspector : Editor
     {
         private SerializedProperty _animationsProperty;
         private SerializedProperty _materialsProperty;

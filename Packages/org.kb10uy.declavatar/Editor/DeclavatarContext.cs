@@ -11,7 +11,7 @@ using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 namespace KusakaFactory.Declavatar
 {
-    public sealed class DeclavatarContext
+    internal sealed class DeclavatarContext
     {
         public DeclavatarExports AllExports { get; }
         public GameObject AbsoluteAvatarRoot { get; }
@@ -170,7 +170,7 @@ namespace KusakaFactory.Declavatar
         }
     }
 
-    public sealed class DeclavatarExports
+    internal sealed class DeclavatarExports
     {
         private HashSet<string> _gates;
         private Dictionary<string, List<string>> _guards;

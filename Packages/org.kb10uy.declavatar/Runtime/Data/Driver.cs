@@ -77,9 +77,9 @@ namespace KusakaFactory.Declavatar.Runtime.Data
         public string Target { get; set; }
     }
 
-    public static partial class Converters
+    internal static partial class Converters
     {
-        public sealed class ParameterDriveConverter : JsonConverter
+        internal sealed class ParameterDriveConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {

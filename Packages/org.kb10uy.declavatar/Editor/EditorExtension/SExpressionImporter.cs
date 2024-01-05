@@ -6,7 +6,7 @@ using UnityEditor.AssetImporters;
 namespace KusakaFactory.Declavatar.EditorExtension
 {
     [ScriptedImporter(1, "declisp")]
-    public sealed class SExpressionImporter : ScriptedImporter
+    internal sealed class SExpressionImporter : ScriptedImporter
     {
         public override void OnImportAsset(AssetImportContext ctx)
         {

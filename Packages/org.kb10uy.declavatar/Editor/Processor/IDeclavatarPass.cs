@@ -1,6 +1,6 @@
 namespace KusakaFactory.Declavatar.Processor
 {
-    public interface IDeclavatarPass
+    internal interface IDeclavatarPass
     {
         public void Execute(DeclavatarContext context);
     }

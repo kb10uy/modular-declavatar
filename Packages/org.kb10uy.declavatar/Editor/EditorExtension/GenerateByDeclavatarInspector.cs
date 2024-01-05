@@ -6,7 +6,7 @@ using KusakaFactory.Declavatar.Runtime;
 namespace KusakaFactory.Declavatar.EditorExtension
 {
     [CustomEditor(typeof(GenerateByDeclavatar))]
-    public class GenerateByDeclavatarInspector : Editor
+    internal sealed class GenerateByDeclavatarInspector : Editor
     {
         private SerializedProperty _formatProperty;
         private SerializedProperty _definitionProperty;

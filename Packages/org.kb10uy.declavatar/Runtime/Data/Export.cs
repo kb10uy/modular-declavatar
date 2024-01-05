@@ -19,9 +19,9 @@ namespace KusakaFactory.Declavatar.Runtime.Data
         }
     }
 
-    public static partial class Converters
+    internal static partial class Converters
     {
-        public sealed class ExportItemConverter : JsonConverter
+        internal sealed class ExportItemConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {

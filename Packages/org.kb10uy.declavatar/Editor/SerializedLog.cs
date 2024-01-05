@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace KusakaFactory.Declavatar
 {
-    public class SerializedLog
+    internal class SerializedLog
     {
         public string Severity { get; set; }
         public string Kind { get; set; }

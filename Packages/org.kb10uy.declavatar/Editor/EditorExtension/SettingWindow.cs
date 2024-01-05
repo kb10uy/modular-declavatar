@@ -3,7 +3,7 @@ using UnityEditor;
 
 namespace KusakaFactory.Declavatar.EditorExtension
 {
-    public class SettingWindow : EditorWindow
+    internal sealed  class SettingWindow : EditorWindow
     {
         [SerializeField]
         private string[] _libraryPaths;

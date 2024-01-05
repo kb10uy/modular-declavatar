@@ -2,7 +2,7 @@
 
 namespace KusakaFactory.Declavatar
 {
-    public class DeclavatarException : Exception
+    internal class DeclavatarException : Exception
     {
         internal DeclavatarException(string message) : base(message) { }
     }
@@ -10,7 +10,7 @@ namespace KusakaFactory.Declavatar
     /// <summary>
     /// Internal logical error.
     /// </summary>
-    public class DeclavatarInternalException : Exception
+    internal class DeclavatarInternalException : Exception
     {
         internal DeclavatarInternalException(string message) : base(message) { }
     }
@@ -18,7 +18,7 @@ namespace KusakaFactory.Declavatar
     /// <summary>
     /// GameObject search error.
     /// </summary>
-    public sealed class DeclavatarRuntimeException : DeclavatarException
+    internal sealed class DeclavatarRuntimeException : DeclavatarException
     {
         internal DeclavatarRuntimeException(string message) : base(message) { }
     }

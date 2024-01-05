@@ -6,7 +6,7 @@ using KusakaFactory.Declavatar.Runtime.Data;
 
 namespace KusakaFactory.Declavatar
 {
-    public static partial class DeclavatarExtension
+    internal static partial class DeclavatarExtension
     {
         public static string AsGroupingKey(this Target target)
         {

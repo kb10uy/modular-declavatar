@@ -15,7 +15,7 @@ using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfPlugin))]
 namespace KusakaFactory.Declavatar
 {
-    public sealed class DeclavatarNdmfPlugin : Plugin<DeclavatarNdmfPlugin>
+    internal sealed class DeclavatarNdmfPlugin : Plugin<DeclavatarNdmfPlugin>
     {
         public override string DisplayName => "Declavatar";
         public override string QualifiedName => "org.kb10uy.declavatar";
@@ -87,6 +87,10 @@ namespace KusakaFactory.Declavatar
 
         private void AggregateExternalAssets(GenerateByDeclavatar.CompiledDeclavatar compiled, ExternalAsset[] externalAssets)
         {
+            compiled.ExternalMaterials = new Dictionary<string, Material>();
+            compiled.ExternalAnimationClips = new Dictionary<string, AnimationClip>();
+            compiled.ExternalLocalizations = new Dictionary<string, string>();
+
             foreach (var externalAsset in externalAssets.Where((ea) => ea != null))
             {
                 var validMaterials = externalAsset
@@ -153,7 +157,7 @@ namespace KusakaFactory.Declavatar
         }
     }
 
-    public static class DeclavatarLocalizer
+    internal static class DeclavatarLocalizer
     {
         public static Localizer ConstructLocalizer()
         {

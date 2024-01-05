@@ -207,12 +207,16 @@ namespace KusakaFactory.Declavatar
                 .Cast<ExportItem.GuardExport>()
                 .GroupBy((g) => g.Gate);
 
-            _gates.AddRange(gateExportNames);
+            foreach (var gateName in gateExportNames)
+            {
+                _gates.Add(gateName);
+                _guards.Add(gateName, new List<string>());
+            }
             foreach (var guardGroup in guardExportGroups)
             {
                 var gateName = guardGroup.Key;
                 var guardParameters = guardGroup.Select((g) => g.Parameter).ToList();
-                _guards.Add(gateName, guardParameters);
+                _guards[gateName].AddRange(guardParameters);
             }
         }
     }

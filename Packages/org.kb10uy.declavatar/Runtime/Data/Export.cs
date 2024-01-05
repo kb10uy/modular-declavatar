@@ -1,9 +1,11 @@
 using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace KusakaFactory.Declavatar.Runtime.Data
 {
+    [JsonConverter(typeof(Converters.ExportItemConverter))]
     public abstract class ExportItem
     {
         public sealed class GateExport : ExportItem
@@ -37,10 +39,11 @@ namespace KusakaFactory.Declavatar.Runtime.Data
                 var obj = JObject.Load(reader) as JToken;
 
                 var contentObject = obj["content"] as JObject;
-                switch (contentObject["type"].Value<string>())
+                Debug.Log(contentObject);
+                switch (obj["type"].Value<string>())
                 {
-                    case "Gate": return contentObject.ToObject<ExportItem.GateExport>(serializer);
-                    case "Guard": return contentObject.ToObject<ExportItem.GuardExport>(serializer);
+                    case "Gate": return new ExportItem.GateExport { Name = contentObject["name"].Value<string>() };
+                    case "Guard": return new ExportItem.GuardExport { Gate = contentObject["gate"].Value<string>(), Parameter = contentObject["parameter"].Value<string>() };
                     default: throw new JsonException("invalid export type");
                 }
             }

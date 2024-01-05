@@ -30,6 +30,9 @@ namespace KusakaFactory.Declavatar.Processor
                     case Layer.PuppetLayer p:
                         GeneratePuppetLayer(context, fxAnimator, animationGroup.Name, p);
                         break;
+                    case Layer.SwitchGateLayer sg:
+                        GenerateSwitchGateLayer(context, fxAnimator, animationGroup.Name, sg);
+                        break;
                     case Layer.RawLayer r:
                         GenerateRawLayer(context, fxAnimator, animationGroup.Name, r);
                         break;
@@ -85,6 +88,20 @@ namespace KusakaFactory.Declavatar.Processor
 
             var state = layer.NewState(name).MotionTime(layerParameter);
             WriteStateAnimation(context, layer, state, puppet.Animation);
+        }
+
+        private void GenerateSwitchGateLayer(DeclavatarContext context, AacFlController controller, string name, Layer.SwitchGateLayer sg)
+        {
+            var layer = controller.NewLayer(name);
+            var disabledState = layer.NewState("Disabled");
+            var enabledState = layer.NewState("Enabled");
+
+            WriteStateAnimation(context, layer, disabledState, sg.Disabled);
+            WriteStateAnimation(context, layer, enabledState, sg.Enabled);
+
+            var parameters = layer.BoolParameters(context.AllExports.GetGateGuardParameters(sg.Gate).ToArray());
+            disabledState.TransitionsTo(enabledState).When(parameters.IsAnyTrue());
+            enabledState.TransitionsTo(disabledState).When(parameters.AreFalse());
         }
 
         private void GenerateRawLayer(DeclavatarContext context, AacFlController controller, string name, Layer.RawLayer rawLayer)

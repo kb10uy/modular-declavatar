@@ -6,11 +6,14 @@ using nadena.dev.ndmf.localization;
 using AnimatorAsCode.V1;
 using KusakaFactory.Declavatar.Runtime;
 using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
+using System.Linq;
+using KusakaFactory.Declavatar.Runtime.Data;
 
 namespace KusakaFactory.Declavatar
 {
     public sealed class DeclavatarContext
     {
+        public DeclavatarExports AllExports { get; }
         public GameObject AbsoluteAvatarRoot { get; }
         public GameObject DeclarationRoot { get; }
         public GameObject MenuInstallRoot { get; }
@@ -28,8 +31,9 @@ namespace KusakaFactory.Declavatar
         private Dictionary<string, GameObject> _gameObjectSearchCache;
         private HashSet<string> _searchedPathCache;
 
-        public DeclavatarContext(BuildContext ndmfContext, Localizer localizer, GenerateByDeclavatar.CompiledDeclavatar compiled)
+        public DeclavatarContext(BuildContext ndmfContext, Localizer localizer, DeclavatarExports exports, GenerateByDeclavatar.CompiledDeclavatar compiled)
         {
+            AllExports = exports;
             AvatarDeclaration = compiled.CompiledAvatar;
             _externalMaterials = compiled.ExternalMaterials;
             _externalAnimationClips = compiled.ExternalAnimationClips;
@@ -163,6 +167,53 @@ namespace KusakaFactory.Declavatar
         public void ReportInternalError(string errorKey, params object[] args)
         {
             ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, errorKey, args);
+        }
+    }
+
+    public sealed class DeclavatarExports
+    {
+        private List<string> _gates;
+        private Dictionary<string, List<string>> _guards;
+
+        public DeclavatarExports(GenerateByDeclavatar.CompiledDeclavatar[] compiledComponents)
+        {
+            _gates = new List<string>();
+            _guards = new Dictionary<string, List<string>>();
+            ConstructGatesAndGuards(compiledComponents);
+        }
+
+        public IReadOnlyList<string> GetGateGuardParameters(string gate)
+        {
+            if (_guards.TryGetValue(gate, out var guardParameters))
+            {
+                return guardParameters;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private void ConstructGatesAndGuards(GenerateByDeclavatar.CompiledDeclavatar[] compiledComponents)
+        {
+            var gateExportNames = compiledComponents
+                .SelectMany((c) => c.CompiledAvatar.Exports)
+                .Where((p) => p is ExportItem.GateExport)
+                .Cast<ExportItem.GateExport>()
+                .Select((g) => g.Name);
+            var guardExportGroups = compiledComponents
+                .SelectMany((c) => c.CompiledAvatar.Exports)
+                .Where((p) => p is ExportItem.GuardExport)
+                .Cast<ExportItem.GuardExport>()
+                .GroupBy((g) => g.Gate);
+
+            _gates.AddRange(gateExportNames);
+            foreach (var guardGroup in guardExportGroups)
+            {
+                var gateName = guardGroup.Key;
+                var guardParameters = guardGroup.Select((g) => g.Parameter).ToList();
+                _guards.Add(gateName, guardParameters);
+            }
         }
     }
 }

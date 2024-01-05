@@ -42,11 +42,11 @@ namespace KusakaFactory.Declavatar.Processor
                 }
             }
 
-            // MEMO: should be absolute path mode?
+            // should be absolute path mode
             var mergeAnimator = context.DeclarationRoot.AddComponent<ModularAvatarMergeAnimator>();
             mergeAnimator.animator = fxAnimator.AnimatorController;
             mergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
-            mergeAnimator.pathMode = MergeAnimatorPathMode.Relative;
+            mergeAnimator.pathMode = MergeAnimatorPathMode.Absolute;
         }
 
         private void GenerateGroupLayer(DeclavatarContext context, AacFlController controller, string name, Layer.GroupLayer g)

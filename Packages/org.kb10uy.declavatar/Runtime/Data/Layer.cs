@@ -39,6 +39,13 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             public LayerAnimation Animation { get; set; }
         }
 
+        public sealed class SwitchGateLayer
+        {
+            public string Gate { get; set; }
+            public LayerAnimation Disabled { get; set; }
+            public LayerAnimation Enabled { get; set; }
+        }
+
         public sealed class PuppetKeyframe
         {
             public float Value { get; set; }
@@ -215,7 +222,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
                 var obj = JObject.Load(reader) as JToken;
 
                 var contentObject = obj["content"] as JObject;
-                object content = null;
+                object content;
                 switch (contentObject["type"].Value<string>())
                 {
                     case "Group":
@@ -226,6 +233,9 @@ namespace KusakaFactory.Declavatar.Runtime.Data
                         break;
                     case "Puppet":
                         content = contentObject.ToObject<Layer.PuppetLayer>(serializer);
+                        break;
+                    case "SwitchGate":
+                        content = contentObject.ToObject<Layer.SwitchGateLayer>(serializer);
                         break;
                     case "Raw":
                         content = contentObject.ToObject<Layer.RawLayer>(serializer);

@@ -50,10 +50,10 @@ namespace KusakaFactory.Declavatar
             var declavatarComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar>();
             foreach (var component in declavatarComponents)
             {
-                if (component.Definition == null) return;
+                if (component.Definition == null) continue;
                 var (declaration, logs) = CompileDeclaration(component.Definition.text, (FormatKind)component.Format);
                 ReportLogsForNdmf(logs);
-                if (declaration == null) return;
+                if (declaration == null) continue;
 
                 var compiledComponent = component.gameObject.AddComponent<GenerateByDeclavatar.CompiledDeclavatar>();
                 compiledComponent.CompiledAvatar = declaration;

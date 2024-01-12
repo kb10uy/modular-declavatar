@@ -134,8 +134,14 @@ namespace KusakaFactory.Declavatar
         private void RemoveComponents(BuildContext ctx)
         {
             var rootObject = ctx.AvatarRootObject;
-            var components = rootObject.GetComponentsInChildren<GenerateByDeclavatar.CompiledDeclavatar>();
-            foreach (var component in components) UnityEngine.Object.DestroyImmediate(component);
+            foreach (var component in rootObject.GetComponentsInChildren<GenerateByDeclavatar.CompiledDeclavatar>())
+            {
+                UnityEngine.Object.DestroyImmediate(component);
+            }
+            foreach (var component in rootObject.GetComponentsInChildren<GenerateByDeclavatar>())
+            {
+                UnityEngine.Object.DestroyImmediate(component);
+            }
         }
 
         #endregion

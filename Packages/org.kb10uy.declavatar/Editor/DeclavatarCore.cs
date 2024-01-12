@@ -26,14 +26,26 @@ namespace KusakaFactory.Declavatar
 
         public void AddLibraryPath(string path)
         {
-            var utf8bytes = Encoding.UTF8.GetBytes(path);
-            Native.DeclavatarAddLibraryPath(_handle, ref utf8bytes[0], (uint)utf8bytes.Length);
+            var utf8Bytes = Encoding.UTF8.GetBytes(path);
+            unsafe
+            {
+                fixed (byte* utf8BytesPtr = utf8Bytes)
+                {
+                    Native.DeclavatarAddLibraryPath(_handle, utf8BytesPtr, (uint)utf8Bytes.Length);
+                }
+            }
         }
 
         public bool Compile(string source, FormatKind kind)
         {
-            var utf8bytes = Encoding.UTF8.GetBytes(source);
-            _lastCompileResult = Native.DeclavatarCompile(_handle, ref utf8bytes[0], (uint)utf8bytes.Length, (uint)kind);
+            var utf8Bytes = Encoding.UTF8.GetBytes(source);
+            unsafe
+            {
+                fixed (byte* utf8BytesPtr = utf8Bytes)
+                {
+                    _lastCompileResult = Native.DeclavatarCompile(_handle, utf8BytesPtr, (uint)utf8Bytes.Length, (uint)kind);
+                }
+            }
             return _lastCompileResult == StatusCode.Success;
         }
 
@@ -121,9 +133,9 @@ namespace KusakaFactory.Declavatar
             [DllImport(LIBRARY_NAME)]
             public static extern StatusCode DeclavatarReset(NativeHandle da);
             [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarAddLibraryPath(NativeHandle da, ref byte path, uint pathLength);
+            public static extern unsafe StatusCode DeclavatarAddLibraryPath(NativeHandle da, byte* path, uint pathLength);
             [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarCompile(NativeHandle da, ref byte source, uint sourceLength, uint formatKind);
+            public static extern unsafe StatusCode DeclavatarCompile(NativeHandle da, byte* source, uint sourceLength, uint formatKind);
             [DllImport(LIBRARY_NAME)]
             public static extern StatusCode DeclavatarGetAvatarJson(NativeHandle da, ref IntPtr json, ref uint jsonLength);
             [DllImport(LIBRARY_NAME)]

@@ -36,6 +36,31 @@ namespace KusakaFactory.Declavatar
             }
         }
 
+        public void DefineSymbol(string symbol)
+        {
+            var utf8Bytes = Encoding.UTF8.GetBytes(symbol);
+            unsafe
+            {
+                fixed (byte* utf8BytesPtr = utf8Bytes)
+                {
+                    Native.DeclavatarDefineSymbol(_handle, utf8BytesPtr, (uint)utf8Bytes.Length);
+                }
+            }
+        }
+
+        public void DefineLocalization(string key, string value)
+        {
+            var utf8Key = Encoding.UTF8.GetBytes(key);
+            var utf8Value = Encoding.UTF8.GetBytes(value);
+            unsafe
+            {
+                fixed (byte* utf8KeyPtr = utf8Key, utf8ValuePtr = utf8Value)
+                {
+                    Native.DeclavatarDefineLocalization(_handle, utf8KeyPtr, (uint)utf8Key.Length, utf8ValuePtr, (uint)utf8Value.Length);
+                }
+            }
+        }
+
         public bool Compile(string source, FormatKind kind)
         {
             var utf8Bytes = Encoding.UTF8.GetBytes(source);
@@ -134,6 +159,10 @@ namespace KusakaFactory.Declavatar
             public static extern StatusCode DeclavatarReset(NativeHandle da);
             [DllImport(LIBRARY_NAME)]
             public static extern unsafe StatusCode DeclavatarAddLibraryPath(NativeHandle da, byte* path, uint pathLength);
+            [DllImport(LIBRARY_NAME)]
+            public static extern unsafe StatusCode DeclavatarDefineSymbol(NativeHandle da, byte* symbol, uint symbolLength);
+            [DllImport(LIBRARY_NAME)]
+            public static extern unsafe StatusCode DeclavatarDefineLocalization(NativeHandle da, byte* key, uint keyLength, byte* value, uint valueLength);
             [DllImport(LIBRARY_NAME)]
             public static extern unsafe StatusCode DeclavatarCompile(NativeHandle da, byte* source, uint sourceLength, uint formatKind);
             [DllImport(LIBRARY_NAME)]

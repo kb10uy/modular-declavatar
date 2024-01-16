@@ -25,7 +25,6 @@ namespace KusakaFactory.Declavatar
         private Localizer _localizer;
         private Dictionary<string, Material> _externalMaterials;
         private Dictionary<string, AnimationClip> _externalAnimationClips;
-        private Dictionary<string, string> _externalLocalizations;
         private Dictionary<string, Renderer> _rendererSearchCache;
         private Dictionary<string, SkinnedMeshRenderer> _skinnedMeshRendererSearchCache;
         private Dictionary<string, GameObject> _gameObjectSearchCache;
@@ -37,7 +36,6 @@ namespace KusakaFactory.Declavatar
             AvatarDeclaration = compiled.CompiledAvatar;
             _externalMaterials = compiled.ExternalMaterials;
             _externalAnimationClips = compiled.ExternalAnimationClips;
-            _externalLocalizations = compiled.ExternalLocalizations;
             CreateMenuInstaller = compiled.CreateMenuInstallerComponent;
             DeclarationRoot = compiled.DeclarationRoot != null ? compiled.DeclarationRoot : compiled.gameObject;
             if (compiled.MenuInstallTarget != null)
@@ -150,13 +148,6 @@ namespace KusakaFactory.Declavatar
             if (_externalAnimationClips.TryGetValue(key, out var animationClip)) return animationClip;
             ReportRuntimeError("runtime.animation_not_found", key);
             throw new DeclavatarRuntimeException($"External animation clip {key} not found");
-        }
-
-        public string GetExternalLocalization(string key)
-        {
-            if (_externalLocalizations.TryGetValue(key, out var localization)) return localization;
-            ReportRuntimeError("runtime.localization_not_found", key);
-            throw new DeclavatarRuntimeException($"External localization {key} not found");
         }
 
         public void ReportRuntimeError(string errorKey, params object[] args)

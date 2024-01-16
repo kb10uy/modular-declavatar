@@ -51,7 +51,14 @@ namespace KusakaFactory.Declavatar
             foreach (var component in declavatarComponents)
             {
                 if (component.Definition == null) continue;
-                var (declaration, logs) = CompileDeclaration(component.Definition.text, (FormatKind)component.Format);
+
+                var (materials, animationClips, localizations) = AggregateExternalAssets(component.ExternalAssets);
+                var (declaration, logs) = CompileDeclaration(
+                    component.Definition.text,
+                    (FormatKind)component.Format,
+                    new HashSet<string>(),
+                    localizations
+                );
                 ReportLogsForNdmf(logs);
                 if (declaration == null) continue;
 
@@ -60,13 +67,14 @@ namespace KusakaFactory.Declavatar
                 compiledComponent.DeclarationRoot = component.DeclarationRoot;
                 compiledComponent.MenuInstallTarget = component.InstallTarget;
                 compiledComponent.CreateMenuInstallerComponent = component.GenerateMenuInstaller;
-                AggregateExternalAssets(compiledComponent, component.ExternalAssets);
+                compiledComponent.ExternalMaterials = materials;
+                compiledComponent.ExternalAnimationClips = animationClips;
             }
 
             foreach (var component in declavatarComponents) UnityEngine.Object.DestroyImmediate(component);
         }
 
-        private (Avatar, List<string>) CompileDeclaration(string source, FormatKind format)
+        private (Avatar, List<string>) CompileDeclaration(string source, FormatKind format, HashSet<string> symbols, Dictionary<string, string> localizations)
         {
             using var declavatarPlugin = new DeclavatarCore();
             declavatarPlugin.Reset();
@@ -76,6 +84,8 @@ namespace KusakaFactory.Declavatar
             foreach (var libraryPath in configuration.EnumerateAbsoluteLibraryPaths()) declavatarPlugin.AddLibraryPath(libraryPath);
 
             // Compile declaration
+            foreach (var symbol in symbols) declavatarPlugin.DefineSymbol(symbol);
+            foreach (var (key, value) in localizations) declavatarPlugin.DefineLocalization(key, value);
             var compileResult = declavatarPlugin.Compile(source, format);
             var logs = declavatarPlugin.FetchLogJsons();
             if (!compileResult) return (null, logs);
@@ -85,11 +95,17 @@ namespace KusakaFactory.Declavatar
             return (definition, logs);
         }
 
-        private void AggregateExternalAssets(GenerateByDeclavatar.CompiledDeclavatar compiled, ExternalAsset[] externalAssets)
+        private (
+            Dictionary<string, Material>,
+            Dictionary<string, AnimationClip>,
+            Dictionary<string, string>
+        ) AggregateExternalAssets(
+            ExternalAsset[] externalAssets
+        )
         {
-            compiled.ExternalMaterials = new Dictionary<string, Material>();
-            compiled.ExternalAnimationClips = new Dictionary<string, AnimationClip>();
-            compiled.ExternalLocalizations = new Dictionary<string, string>();
+            var materials = new Dictionary<string, Material>();
+            var animationClips = new Dictionary<string, AnimationClip>();
+            var localizations = new Dictionary<string, string>();
 
             foreach (var externalAsset in externalAssets.Where((ea) => ea != null))
             {
@@ -103,10 +119,12 @@ namespace KusakaFactory.Declavatar
                     .Localizations
                     .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && !string.IsNullOrWhiteSpace(p.Localization));
 
-                foreach (var pair in validMaterials) compiled.ExternalMaterials.Add(pair.Key, pair.Material);
-                foreach (var pair in validAnimationClips) compiled.ExternalAnimationClips.Add(pair.Key, pair.Animation);
-                foreach (var pair in validLocalizations) compiled.ExternalLocalizations.Add(pair.Key, pair.Localization);
+                foreach (var pair in validMaterials) materials.Add(pair.Key, pair.Material);
+                foreach (var pair in validAnimationClips) animationClips.Add(pair.Key, pair.Animation);
+                foreach (var pair in validLocalizations) localizations.Add(pair.Key, pair.Localization);
             }
+
+            return (materials, animationClips, localizations);
         }
 
         #endregion

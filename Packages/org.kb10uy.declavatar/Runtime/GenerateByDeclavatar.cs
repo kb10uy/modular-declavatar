@@ -10,6 +10,7 @@ namespace KusakaFactory.Declavatar.Runtime
         public DeclarationFormat Format = DeclarationFormat.SExpression;
         public TextAsset Definition;
         public ExternalAsset[] ExternalAssets;
+        public string[] Symbols;
 
         public GameObject DeclarationRoot;
         public GameObject InstallTarget;
@@ -26,7 +27,6 @@ namespace KusakaFactory.Declavatar.Runtime
             public Avatar CompiledAvatar;
             public Dictionary<string, Material> ExternalMaterials;
             public Dictionary<string, AnimationClip> ExternalAnimationClips;
-            public Dictionary<string, string> ExternalLocalizations;
 
             public GameObject DeclarationRoot;
             public GameObject MenuInstallTarget;

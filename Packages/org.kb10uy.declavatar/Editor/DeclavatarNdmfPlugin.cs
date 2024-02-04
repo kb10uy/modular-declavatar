@@ -53,10 +53,11 @@ namespace KusakaFactory.Declavatar
                 if (component.Definition == null) continue;
 
                 var (materials, animationClips, localizations) = AggregateExternalAssets(component.ExternalAssets);
+                var symbols = component.Symbols.ToHashSet();
                 var (declaration, logs) = CompileDeclaration(
                     component.Definition.text,
                     (FormatKind)component.Format,
-                    new HashSet<string>(),
+                    symbols,
                     localizations
                 );
                 ReportLogsForNdmf(logs);

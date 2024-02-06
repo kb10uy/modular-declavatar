@@ -22,6 +22,7 @@ namespace KusakaFactory.Declavatar
 
         private Localizer _localizer;
         private JsonSerializerSettings _serializerSettings;
+        private List<string> _libraryPaths;
         private IDeclavatarPass[] _passes;
 
         protected override void Configure()
@@ -31,6 +32,7 @@ namespace KusakaFactory.Declavatar
             {
                 ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() }
             };
+            _libraryPaths = Configuration.LoadEditorUserSettings().EnumerateAbsoluteLibraryPaths().ToList();
             _passes = new IDeclavatarPass[]
             {
                 new GenerateControllerPass(),
@@ -56,7 +58,7 @@ namespace KusakaFactory.Declavatar
                 var symbols = component.Symbols.ToHashSet();
                 var (declaration, logs) = CompileDeclaration(
                     component.Definition.text,
-                    (FormatKind)component.Format,
+                    (DeclavatarFormat)component.Format,
                     symbols,
                     localizations
                 );
@@ -75,24 +77,36 @@ namespace KusakaFactory.Declavatar
             foreach (var component in declavatarComponents) UnityEngine.Object.DestroyImmediate(component);
         }
 
-        private (Avatar, List<string>) CompileDeclaration(string source, FormatKind format, HashSet<string> symbols, Dictionary<string, string> localizations)
+        private (Avatar, List<SerializedLog>) CompileDeclaration(string source, DeclavatarFormat format, HashSet<string> symbols, Dictionary<string, string> localizations)
         {
-            using var declavatarPlugin = new DeclavatarCore();
-            declavatarPlugin.Reset();
+            string avatarJson;
+            List<string> logJsons;
+            unsafe
+            {
+                void* declavatar = null;
+                void* compiled = null;
+                try
+                {
+                    declavatar = DeclavatarCore.Create();
+                    foreach (var path in _libraryPaths) DeclavatarCore.AddLibraryPath(declavatar, path);
+                    // TODO: register arbittach
 
-            // Load libraries
-            var configuration = Configuration.LoadEditorUserSettings();
-            foreach (var libraryPath in configuration.EnumerateAbsoluteLibraryPaths()) declavatarPlugin.AddLibraryPath(libraryPath);
+                    foreach (var symbol in symbols) DeclavatarCore.DefineSymbol(declavatar, symbol);
+                    foreach (var (key, value) in localizations) DeclavatarCore.DefineLocalization(declavatar, key, value);
 
-            // Compile declaration
-            foreach (var symbol in symbols) declavatarPlugin.DefineSymbol(symbol);
-            foreach (var (key, value) in localizations) declavatarPlugin.DefineLocalization(key, value);
-            var compileResult = declavatarPlugin.Compile(source, format);
-            var logs = declavatarPlugin.FetchLogJsons();
-            if (!compileResult) return (null, logs);
+                    compiled = DeclavatarCore.Compile(declavatar, source, format);
+                    logJsons = DeclavatarCore.GetLogJsons(compiled);
+                    avatarJson = DeclavatarCore.GetAvatarJson(compiled);
+                }
+                finally
+                {
+                    DeclavatarCore.DestroyCompiledState(compiled);
+                    DeclavatarCore.Destroy(declavatar);
+                }
+            }
 
-            var definitionJson = declavatarPlugin.GetAvatarJson();
-            var definition = JsonConvert.DeserializeObject<Avatar>(definitionJson, _serializerSettings);
+            var definition = avatarJson != null ? JsonConvert.DeserializeObject<Avatar>(avatarJson, _serializerSettings) : null;
+            var logs = logJsons.Select((lj) => JsonConvert.DeserializeObject<SerializedLog>(lj, _serializerSettings)).ToList();
             return (definition, logs);
         }
 
@@ -165,19 +179,18 @@ namespace KusakaFactory.Declavatar
 
         #endregion
 
-        private void ReportLogsForNdmf(List<string> logJsons)
+        private void ReportLogsForNdmf(List<SerializedLog> logs)
         {
-            foreach (var logJson in logJsons)
+            foreach (var log in logs)
             {
-                var serializedLog = JsonConvert.DeserializeObject<SerializedLog>(logJson, _serializerSettings);
-                var severity = serializedLog.Severity switch
+                var severity = log.Severity switch
                 {
                     "Information" => ErrorSeverity.Information,
                     "Warning" => ErrorSeverity.NonFatal,
                     "Error" => ErrorSeverity.Error,
                     _ => throw new DeclavatarInternalException("unknown severity"),
                 };
-                ErrorReport.ReportError(_localizer, severity, serializedLog.Kind, serializedLog.Args.ToArray());
+                ErrorReport.ReportError(_localizer, severity, log.Kind, log.Args.ToArray());
             }
         }
     }

@@ -6,105 +6,123 @@ using Newtonsoft.Json;
 
 namespace KusakaFactory.Declavatar
 {
-    internal sealed class DeclavatarCore : IDisposable
+    internal static class DeclavatarCore
     {
-        private NativeHandle _handle = null;
-        private bool _disposed = false;
-        private StatusCode _lastCompileResult = StatusCode.NotCompiled;
-
-        public DeclavatarCore()
+        internal static unsafe Dictionary<string, string> GetLogLocalization(string locale)
         {
-            _handle = NativeHandle.Create();
-            if (_handle.IsInvalid) throw new NullReferenceException("failed to create declavatar handle");
-        }
-
-        public void Reset()
-        {
-            Native.DeclavatarReset(_handle);
-            _lastCompileResult = StatusCode.NotCompiled;
-        }
-
-        public void AddLibraryPath(string path)
-        {
-            var utf8Bytes = Encoding.UTF8.GetBytes(path);
-            unsafe
-            {
-                fixed (byte* utf8BytesPtr = utf8Bytes)
-                {
-                    Native.DeclavatarAddLibraryPath(_handle, utf8BytesPtr, (uint)utf8Bytes.Length);
-                }
-            }
-        }
-
-        public void DefineSymbol(string symbol)
-        {
-            var utf8Bytes = Encoding.UTF8.GetBytes(symbol);
-            unsafe
-            {
-                fixed (byte* utf8BytesPtr = utf8Bytes)
-                {
-                    Native.DeclavatarDefineSymbol(_handle, utf8BytesPtr, (uint)utf8Bytes.Length);
-                }
-            }
-        }
-
-        public void DefineLocalization(string key, string value)
-        {
-            var utf8Key = Encoding.UTF8.GetBytes(key);
-            var utf8Value = Encoding.UTF8.GetBytes(value);
-            unsafe
-            {
-                fixed (byte* utf8KeyPtr = utf8Key, utf8ValuePtr = utf8Value)
-                {
-                    Native.DeclavatarDefineLocalization(_handle, utf8KeyPtr, (uint)utf8Key.Length, utf8ValuePtr, (uint)utf8Value.Length);
-                }
-            }
-        }
-
-        public bool Compile(string source, FormatKind kind)
-        {
-            var utf8Bytes = Encoding.UTF8.GetBytes(source);
-            unsafe
-            {
-                fixed (byte* utf8BytesPtr = utf8Bytes)
-                {
-                    _lastCompileResult = Native.DeclavatarCompile(_handle, utf8BytesPtr, (uint)utf8Bytes.Length, (uint)kind);
-                }
-            }
-            return _lastCompileResult == StatusCode.Success;
-        }
-
-        public string GetAvatarJson()
-        {
-            if (_lastCompileResult != StatusCode.Success) return null;
-
-            IntPtr json = IntPtr.Zero;
+            byte* json = null;
             uint jsonLength = 0;
-            if (Native.DeclavatarGetAvatarJson(_handle, ref json, ref jsonLength) != StatusCode.Success)
+
+            var localeBytes = Encoding.UTF8.GetBytes(locale);
+            fixed (byte* localeBytesPtr = localeBytes)
             {
-                return null;
+                if (NativeMethods.declavatar_log_localization(localeBytesPtr, (uint)localeBytes.Length, &json, &jsonLength) != DeclavatarStatus.Success)
+                {
+                    return null;
+                }
             }
 
             var buffer = new byte[jsonLength];
-            Marshal.Copy(json, buffer, 0, (int)jsonLength);
+            Marshal.Copy((IntPtr)json, buffer, 0, (int)jsonLength);
+            var jsonString = Encoding.UTF8.GetString(buffer);
+            return JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+        }
+
+        internal static unsafe void* Create()
+        {
+            var state = NativeMethods.declavatar_init();
+            if (state == null) throw new NullReferenceException("failed to create declavatar handle");
+            return state;
+        }
+
+        internal static unsafe void Destroy(void* declavatarState)
+        {
+            NativeMethods.declavatar_free(declavatarState);
+        }
+
+        internal static unsafe void AddLibraryPath(void* declavatarState, string path)
+        {
+            var utf8Bytes = Encoding.UTF8.GetBytes(path);
+            fixed (byte* utf8BytesPtr = utf8Bytes)
+            {
+                NativeMethods.declavatar_add_library_path(declavatarState, utf8BytesPtr, (uint)utf8Bytes.Length);
+            }
+        }
+
+        internal static unsafe void DefineSymbol(void* declavatarState, string symbol)
+        {
+            var utf8Bytes = Encoding.UTF8.GetBytes(symbol);
+            fixed (byte* utf8BytesPtr = utf8Bytes)
+            {
+                NativeMethods.declavatar_define_symbol(declavatarState, utf8BytesPtr, (uint)utf8Bytes.Length);
+            }
+        }
+
+        internal static unsafe void DefineLocalization(void* declavatarState, string key, string value)
+        {
+            var utf8Key = Encoding.UTF8.GetBytes(key);
+            var utf8Value = Encoding.UTF8.GetBytes(value);
+            fixed (byte* utf8KeyPtr = utf8Key, utf8ValuePtr = utf8Value)
+            {
+                NativeMethods.declavatar_define_localization(declavatarState, utf8KeyPtr, (uint)utf8Key.Length, utf8ValuePtr, (uint)utf8Value.Length);
+            }
+        }
+
+        internal static unsafe void* Compile(void* declavatarState, string source, DeclavatarFormat formatKind)
+        {
+            void* compiledState = null;
+            DeclavatarStatus status;
+
+            var utf8Bytes = Encoding.UTF8.GetBytes(source);
+            fixed (byte* utf8BytesPtr = utf8Bytes)
+            {
+                status = NativeMethods.declavatar_compile(declavatarState, &compiledState, utf8BytesPtr, (uint)utf8Bytes.Length, formatKind);
+            }
+
+            switch (status)
+            {
+                case DeclavatarStatus.Success: return compiledState;
+                case DeclavatarStatus.JsonError: throw new InvalidOperationException("internal JSON error");
+                case DeclavatarStatus.InvalidValue: throw new InvalidOperationException("invalid format specified");
+                default: throw new InvalidOperationException("invalid pointer");
+            }
+        }
+
+        internal static unsafe void DestroyCompiledState(void* compiledState)
+        {
+            NativeMethods.declavatar_compiled_free(compiledState);
+        }
+
+        internal static unsafe string GetAvatarJson(void* compiledState)
+        {
+            byte* json = null;
+            uint jsonLength = 0;
+            if (NativeMethods.declavatar_compiled_avatar_json(compiledState, &json, &jsonLength) != DeclavatarStatus.Success)
+            {
+                return null;
+            }
+            if (json == null) return null;
+
+            var buffer = new byte[jsonLength];
+            Marshal.Copy((IntPtr)json, buffer, 0, (int)jsonLength);
             var jsonString = Encoding.UTF8.GetString(buffer);
             return jsonString;
         }
 
-        public List<string> FetchLogJsons()
+        internal static unsafe List<string> GetLogJsons(void* compiledState)
         {
             var logs = new List<string>();
             uint logsCount = 0;
-            Native.DeclavatarGetLogsCount(_handle, ref logsCount);
+            NativeMethods.declavatar_compiled_logs_count(compiledState, &logsCount);
 
             for (uint i = 0; i < logsCount; i++)
             {
-                IntPtr logJson = IntPtr.Zero;
+                byte* logJson = null;
                 uint logJsonLength = 0;
-                Native.DeclavatarGetLogJson(_handle, i, ref logJson, ref logJsonLength);
+                NativeMethods.declavatar_compiled_log(compiledState, i, &logJson, &logJsonLength);
 
                 var buffer = new byte[logJsonLength];
-                Marshal.Copy(logJson, buffer, 0, (int)logJsonLength);
+                Marshal.Copy((IntPtr)logJson, buffer, 0, (int)logJsonLength);
                 var logJsonString = Encoding.UTF8.GetString(buffer);
 
                 logs.Add(logJsonString);
@@ -112,104 +130,5 @@ namespace KusakaFactory.Declavatar
 
             return logs;
         }
-
-        public static Dictionary<string, string> GetLogLocalization(string locale)
-        {
-            var keyBytes = Encoding.UTF8.GetBytes($"log.{locale}");
-            IntPtr json = IntPtr.Zero;
-            uint jsonLength = 0;
-            if (Native.DeclavatarGetI18n(ref keyBytes[0], (uint)keyBytes.Length, ref json, ref jsonLength) != StatusCode.Success)
-            {
-                return null;
-            }
-            var buffer = new byte[jsonLength];
-            Marshal.Copy(json, buffer, 0, (int)jsonLength);
-            var jsonString = Encoding.UTF8.GetString(buffer);
-            return JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (_disposed) return;
-            if (disposing) this._handle.Dispose();
-            _disposed = true;
-        }
-
-        internal static class Native
-        {
-#if UNITY_EDITOR_WIN
-            private const string LIBRARY_NAME = "declavatar.dll";
-#elif UNITY_EDITOR_OSX
-            private const string LIBRARY_NAME = "libdeclavatar.dylib";
-#elif UNITY_EDITOR_LINUX
-            private const string LIBRARY_NAME = "libdeclavatar.so";
-#endif
-
-            [DllImport(LIBRARY_NAME)]
-            public static extern IntPtr DeclavatarInit();
-            [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarFree(IntPtr da);
-            [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarReset(NativeHandle da);
-            [DllImport(LIBRARY_NAME)]
-            public static extern unsafe StatusCode DeclavatarAddLibraryPath(NativeHandle da, byte* path, uint pathLength);
-            [DllImport(LIBRARY_NAME)]
-            public static extern unsafe StatusCode DeclavatarDefineSymbol(NativeHandle da, byte* symbol, uint symbolLength);
-            [DllImport(LIBRARY_NAME)]
-            public static extern unsafe StatusCode DeclavatarDefineLocalization(NativeHandle da, byte* key, uint keyLength, byte* value, uint valueLength);
-            [DllImport(LIBRARY_NAME)]
-            public static extern unsafe StatusCode DeclavatarCompile(NativeHandle da, byte* source, uint sourceLength, uint formatKind);
-            [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarGetAvatarJson(NativeHandle da, ref IntPtr json, ref uint jsonLength);
-            [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarGetLogsCount(NativeHandle da, ref uint errors);
-            [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarGetLogJson(NativeHandle da, uint index, ref IntPtr message, ref uint messageLength);
-            [DllImport(LIBRARY_NAME)]
-            public static extern StatusCode DeclavatarGetI18n(ref byte i18nKey, uint i18nKeyLength, ref IntPtr i18nJson, ref uint i18nJsonLength);
-        }
-
-        internal sealed class NativeHandle : SafeHandle
-        {
-            public override bool IsInvalid => handle == IntPtr.Zero;
-
-            private NativeHandle(IntPtr newHandle) : base(IntPtr.Zero, true)
-            {
-                SetHandle(newHandle);
-            }
-
-            protected override bool ReleaseHandle()
-            {
-                return Native.DeclavatarFree(handle) == (uint)StatusCode.Success;
-            }
-
-            public static NativeHandle Create()
-            {
-                var newHandle = Native.DeclavatarInit();
-                return new NativeHandle(newHandle);
-            }
-        }
-
-        internal enum StatusCode : uint
-        {
-            Success = 0,
-            Utf8Error = 1,
-            CompileError = 2,
-            AlreadyInUse = 3,
-            NotCompiled = 4,
-            InvalidPointer = 128,
-        }
-    }
-
-    internal enum FormatKind : uint
-    {
-        SExpression = 1,
-        Lua = 2,
     }
 }

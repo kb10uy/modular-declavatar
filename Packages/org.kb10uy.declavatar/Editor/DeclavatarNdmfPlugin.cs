@@ -8,6 +8,7 @@ using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
 using KusakaFactory.Declavatar;
+using KusakaFactory.Declavatar.Arbittach;
 using KusakaFactory.Declavatar.Processor;
 using KusakaFactory.Declavatar.Runtime;
 using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
@@ -30,7 +31,7 @@ namespace KusakaFactory.Declavatar
             _localizer = DeclavatarLocalizer.ConstructLocalizer();
             _serializerSettings = new JsonSerializerSettings
             {
-                ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() }
+                ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() },
             };
             _libraryPaths = Configuration.LoadEditorUserSettings().EnumerateAbsoluteLibraryPaths().ToList();
             _passes = new IDeclavatarPass[]
@@ -40,14 +41,30 @@ namespace KusakaFactory.Declavatar
                 new GenerateMenuPass(),
             };
 
-            InPhase(BuildPhase.Resolving).Run("Compile declaration files", CompileAllDeclarations);
+            InPhase(BuildPhase.Resolving).Run("Compile declaration files", PrepareDeclarations);
             InPhase(BuildPhase.Generating).Run("Process declaration elements", ProcessDeclarations);
             InPhase(BuildPhase.Transforming).Run("Remove declavatar components", RemoveComponents);
         }
 
         #region Compile declavatar files
 
-        private void CompileAllDeclarations(BuildContext ctx)
+        private void PrepareDeclarations(BuildContext ctx)
+        {
+            SerializeArbittachSchema();
+            CompileAndReplaceDeclarations(ctx);
+        }
+
+        private void SerializeArbittachSchema()
+        {
+            foreach (var (type, customName) in SchemaSerializer.EnumerateAttachmentTypes())
+            {
+                var schema = SchemaSerializer.SerializeSchema(type, customName);
+                var schemaJson = JsonConvert.SerializeObject(schema, _serializerSettings);
+                Debug.Log(schemaJson);
+            }
+        }
+
+        private void CompileAndReplaceDeclarations(BuildContext ctx)
         {
             var declavatarComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar>();
             foreach (var component in declavatarComponents)

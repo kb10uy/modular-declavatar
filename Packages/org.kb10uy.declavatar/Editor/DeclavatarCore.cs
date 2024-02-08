@@ -49,6 +49,15 @@ namespace KusakaFactory.Declavatar
             }
         }
 
+        internal static unsafe void RegisterArbittach(void* declavatarState, string schemaJson)
+        {
+            var utf8Bytes = Encoding.UTF8.GetBytes(schemaJson);
+            fixed (byte* utf8BytesPtr = utf8Bytes)
+            {
+                NativeMethods.declavatar_register_arbittach(declavatarState, utf8BytesPtr, (uint)utf8Bytes.Length);
+            }
+        }
+
         internal static unsafe void DefineSymbol(void* declavatarState, string symbol)
         {
             var utf8Bytes = Encoding.UTF8.GetBytes(symbol);

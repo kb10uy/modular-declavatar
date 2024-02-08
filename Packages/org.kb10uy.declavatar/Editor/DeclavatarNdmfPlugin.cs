@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using Newtonsoft.Json;
@@ -24,6 +25,7 @@ namespace KusakaFactory.Declavatar
         private Localizer _localizer;
         private JsonSerializerSettings _serializerSettings;
         private List<string> _libraryPaths;
+        private Dictionary<string, AttachmentDefinition> _attachments;
         private IDeclavatarPass[] _passes;
 
         protected override void Configure()
@@ -33,9 +35,16 @@ namespace KusakaFactory.Declavatar
             {
                 ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() },
             };
+
             _libraryPaths = Configuration.LoadEditorUserSettings().EnumerateAbsoluteLibraryPaths().ToList();
+            _attachments = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany((asm) => asm.GetCustomAttributes<ExportArbittachSchemaAttribute>())
+                .Select((attr) => AttachmentDefinition.Create(attr.SchemaType, attr.Name))
+                .ToDictionary((ad) => ad.RegisteredName);
+
             _passes = new IDeclavatarPass[]
             {
+                new ExecuteArbittachPass(_attachments),
                 new GenerateControllerPass(),
                 new GenerateParameterPass(),
                 new GenerateMenuPass(),
@@ -50,18 +59,7 @@ namespace KusakaFactory.Declavatar
 
         private void PrepareDeclarations(BuildContext ctx)
         {
-            SerializeArbittachSchema();
             CompileAndReplaceDeclarations(ctx);
-        }
-
-        private void SerializeArbittachSchema()
-        {
-            foreach (var (type, customName) in SchemaSerializer.EnumerateAttachmentTypes())
-            {
-                var schema = SchemaSerializer.SerializeSchema(type, customName);
-                var schemaJson = JsonConvert.SerializeObject(schema, _serializerSettings);
-                Debug.Log(schemaJson);
-            }
         }
 
         private void CompileAndReplaceDeclarations(BuildContext ctx)
@@ -106,7 +104,11 @@ namespace KusakaFactory.Declavatar
                 {
                     declavatar = DeclavatarCore.Create();
                     foreach (var path in _libraryPaths) DeclavatarCore.AddLibraryPath(declavatar, path);
-                    // TODO: register arbittach
+                    foreach (var attachment in _attachments.Values)
+                    {
+                        var schemaJson = JsonConvert.SerializeObject(attachment.Schema, _serializerSettings);
+                        DeclavatarCore.RegisterArbittach(declavatar, schemaJson);
+                    }
 
                     foreach (var symbol in symbols) DeclavatarCore.DefineSymbol(declavatar, symbol);
                     foreach (var (key, value) in localizations) DeclavatarCore.DefineLocalization(declavatar, key, value);

@@ -1,7 +1,7 @@
 using KusakaFactory.Declavatar.Arbittach;
 
-[assembly: ExportArbittachSchema(typeof(BasicAttachment))]
-namespace KusakaFactory.Declavatar.Arbittach
+[assembly: ExportArbittachSchema(typeof(KusakaFactory.Declavatar.Attachment.BasicAttachment))]
+namespace KusakaFactory.Declavatar.Attachment
 {
     [DefineProperty("PropertyX", 1)]
     [DefineProperty("PropertyY", 2)]
@@ -13,7 +13,10 @@ namespace KusakaFactory.Declavatar.Arbittach
         [BindValue("PropertyY.0")]
         public int Value { get; set; }
 
-        [BindValue("PropertyX.Keyword")]
+        [BindValue("PropertyY.1")]
+        public bool Flag { get; set; }
+
+        [BindValue("PropertyX.?Keyword")]
         public string KeywordValue { get; set; }
 
         [BindValue("PropertyY.?Maybe")]

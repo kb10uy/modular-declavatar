@@ -52,7 +52,7 @@ namespace KusakaFactory.Declavatar.EditorExtension
 
         internal static class Constants
         {
-            public static GUIStyle TitleLabel { get; private set; }
+            internal static GUIStyle TitleLabel { get; private set; }
 
             static Constants()
             {

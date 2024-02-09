@@ -13,15 +13,15 @@ namespace KusakaFactory.Declavatar
 {
     internal sealed class DeclavatarContext
     {
-        public DeclavatarExports AllExports { get; }
-        public GameObject AbsoluteAvatarRoot { get; }
-        public GameObject DeclarationRoot { get; }
-        public GameObject MenuInstallRoot { get; }
-        public bool CreateMenuInstaller { get; }
+        internal DeclavatarExports AllExports { get; }
+        internal GameObject AbsoluteAvatarRoot { get; }
+        internal GameObject DeclarationRoot { get; }
+        internal GameObject MenuInstallRoot { get; }
+        internal bool CreateMenuInstaller { get; }
 
-        public Avatar AvatarDeclaration { get; }
-        public BuildContext NdmfContext { get; }
-        public AacFlBase Aac { get; }
+        internal Avatar AvatarDeclaration { get; }
+        internal BuildContext NdmfContext { get; }
+        internal AacFlBase Aac { get; }
 
         private Localizer _localizer;
         private Dictionary<string, Material> _externalMaterials;
@@ -31,7 +31,7 @@ namespace KusakaFactory.Declavatar
         private Dictionary<string, GameObject> _gameObjectSearchCache;
         private HashSet<string> _searchedPathCache;
 
-        public DeclavatarContext(BuildContext ndmfContext, Localizer localizer, DeclavatarExports exports, GenerateByDeclavatar.CompiledDeclavatar compiled)
+        internal DeclavatarContext(BuildContext ndmfContext, Localizer localizer, DeclavatarExports exports, GenerateByDeclavatar.CompiledDeclavatar compiled)
         {
             AllExports = exports;
             AvatarDeclaration = compiled.CompiledAvatar;
@@ -73,7 +73,7 @@ namespace KusakaFactory.Declavatar
             _searchedPathCache = new HashSet<string>();
         }
 
-        public Renderer FindRenderer(string path)
+        internal Renderer FindRenderer(string path)
         {
             var cachedPath = $"mr://{path}";
             if (_searchedPathCache.Contains(cachedPath))
@@ -95,7 +95,7 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        public SkinnedMeshRenderer FindSkinnedMeshRenderer(string path)
+        internal SkinnedMeshRenderer FindSkinnedMeshRenderer(string path)
         {
             var cachedPath = $"smr://{path}";
             if (_searchedPathCache.Contains(cachedPath))
@@ -117,7 +117,7 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        public GameObject FindGameObject(string path)
+        internal GameObject FindGameObject(string path)
         {
             var cachedPath = $"go://{path}";
             if (_searchedPathCache.Contains(cachedPath))
@@ -138,26 +138,26 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        public Material GetExternalMaterial(string key)
+        internal Material GetExternalMaterial(string key)
         {
             if (_externalMaterials.TryGetValue(key, out var material)) return material;
             ReportRuntimeError("runtime.material_not_found", key);
             throw new DeclavatarRuntimeException($"External material {key} not found");
         }
 
-        public AnimationClip GetExternalAnimationClip(string key)
+        internal AnimationClip GetExternalAnimationClip(string key)
         {
             if (_externalAnimationClips.TryGetValue(key, out var animationClip)) return animationClip;
             ReportRuntimeError("runtime.animation_not_found", key);
             throw new DeclavatarRuntimeException($"External animation clip {key} not found");
         }
 
-        public void ReportRuntimeError(string errorKey, params object[] args)
+        internal void ReportRuntimeError(string errorKey, params object[] args)
         {
             ErrorReport.ReportError(_localizer, ErrorSeverity.Error, errorKey, args);
         }
 
-        public void ReportInternalError(string errorKey, params object[] args)
+        internal void ReportInternalError(string errorKey, params object[] args)
         {
             ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, errorKey, args);
         }
@@ -168,14 +168,14 @@ namespace KusakaFactory.Declavatar
         private HashSet<string> _gates;
         private Dictionary<string, List<string>> _guards;
 
-        public DeclavatarExports(GenerateByDeclavatar.CompiledDeclavatar[] compiledComponents)
+        internal DeclavatarExports(GenerateByDeclavatar.CompiledDeclavatar[] compiledComponents)
         {
             _gates = new HashSet<string>();
             _guards = new Dictionary<string, List<string>>();
             ConstructGatesAndGuards(compiledComponents);
         }
 
-        public IReadOnlyList<string> GetGateGuardParameters(string gate)
+        internal IReadOnlyList<string> GetGateGuardParameters(string gate)
         {
             if (_guards.TryGetValue(gate, out var guardParameters))
             {

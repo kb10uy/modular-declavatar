@@ -311,10 +311,25 @@ namespace KusakaFactory.Declavatar.Arbittach
 
         #endregion
 
+        /// <summary>
+        /// Attachment property path.
+        /// </summary>
         public class PropertyBindPath
         {
+            /// <summary>
+            /// Accessing property.
+            /// </summary>
             public string Property { get; internal set; }
+
+            /// <summary>
+            /// Whether this value is required.
+            /// </summary>
             public bool Required { get; internal set; }
+
+            /// <summary>
+            /// Property access indexer.
+            /// If this path is for parameter, it should represent a number
+            /// </summary>
             public string Indexer { get; internal set; }
         }
     }

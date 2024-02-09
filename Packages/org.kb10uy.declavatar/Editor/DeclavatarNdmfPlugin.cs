@@ -53,7 +53,7 @@ namespace KusakaFactory.Declavatar
             _libraryPaths = Configuration.LoadEditorUserSettings().EnumerateAbsoluteLibraryPaths().ToList();
 
             _processors = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany((asm) => asm.GetCustomAttributes<ExportProcessorAttribute>())
+                .SelectMany((asm) => asm.GetCustomAttributes<ExportsProcessorAttribute>())
                 .Select((attr) => (attr.ProcessorType, attr.Name, AttachmentType: ScanArbittachProcessorType(attr.ProcessorType)))
                 .Where((p) => p.AttachmentType != null)
                 .Select((p) =>

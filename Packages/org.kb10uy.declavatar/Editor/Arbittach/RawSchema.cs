@@ -4,36 +4,36 @@ namespace KusakaFactory.Declavatar.Arbittach
 {
     public sealed class RawAttachmentSchema
     {
-        public string Name { get; set; }
+        public string Name { get; internal set; }
 
-        public List<RawPropertySchema> Properties { get; set; }
+        public List<RawPropertySchema> Properties { get; internal set; }
     }
 
     public sealed class RawPropertySchema
     {
-        public string Name { get; set; }
-        public bool Required { get; set; }
-        public List<RawParameterSchema> Parameters { get; set; }
-        public List<RawKeywordSchema> Keywords { get; set; }
+        public string Name { get; internal set; }
+        public bool Required { get; internal set; }
+        public List<RawParameterSchema> Parameters { get; internal set; }
+        public List<RawKeywordSchema> Keywords { get; internal set; }
     }
 
     public sealed class RawParameterSchema
     {
-        public string Name { get; set; }
-        public RawValueTypeSchema ValueType { get; set; }
+        public string Name { get; internal set; }
+        public RawValueTypeSchema ValueType { get; internal set; }
     }
 
     public sealed class RawKeywordSchema
     {
-        public string Name { get; set; }
-        public bool Required { get; set; }
-        public RawValueTypeSchema ValueType { get; set; }
+        public string Name { get; internal set; }
+        public bool Required { get; internal set; }
+        public RawValueTypeSchema ValueType { get; internal set; }
     }
 
     public sealed class RawValueTypeSchema
     {
-        public string Type { get; set; } = "Any";
-        public object Content { get; set; } = null;
+        public string Type { get; private set; } = "Any";
+        public object Content { get; private set; } = null;
 
         public static readonly RawValueTypeSchema Null = new() { Type = "Null" };
         public static readonly RawValueTypeSchema Boolean = new() { Type = "Boolean" };

@@ -8,7 +8,7 @@ namespace KusakaFactory.Declavatar
 {
     internal static partial class DeclavatarExtension
     {
-        public static string AsGroupingKey(this Target target)
+        internal static string AsGroupingKey(this Target target)
         {
             switch (target)
             {
@@ -19,7 +19,7 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        public static float ConvertToVRCParameterValue(this ParameterType value)
+        internal static float ConvertToVRCParameterValue(this ParameterType value)
         {
             switch (value.Type)
             {
@@ -30,7 +30,7 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        public static ParameterSyncType ConvertToMASyncType(this Parameter parameter)
+        internal static ParameterSyncType ConvertToMASyncType(this Parameter parameter)
         {
             if (parameter.Scope.Type == "Internal") return ParameterSyncType.NotSynced;
             switch (parameter.ValueType.Type)
@@ -42,7 +42,7 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        public static AacAv3.Av3TrackingElement ConvertToAacTarget(this string target)
+        internal static AacAv3.Av3TrackingElement ConvertToAacTarget(this string target)
         {
             switch (target)
             {

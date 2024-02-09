@@ -4,7 +4,7 @@ using nadena.dev.ndmf;
 using KusakaFactory.Declavatar.Arbittach;
 using KusakaFactory.Declavatar.Attachment;
 
-[assembly: ExportProcessor(typeof(BasicAttachmentProcessor))]
+[assembly: ExportsProcessor(typeof(BasicAttachmentProcessor))]
 namespace KusakaFactory.Declavatar.Attachment
 {
     public sealed class BasicAttachmentProcessor : ArbittachProcessor<BasicAttachmentProcessor, BasicAttachment>

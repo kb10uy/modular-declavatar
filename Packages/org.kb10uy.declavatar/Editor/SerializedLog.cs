@@ -4,9 +4,9 @@ namespace KusakaFactory.Declavatar
 {
     internal class SerializedLog
     {
-        public string Severity { get; set; }
-        public string Kind { get; set; }
-        public List<string> Args { get; set; }
-        public List<string> Context { get; set; }
+        internal string Severity { get; set; }
+        internal string Kind { get; set; }
+        internal List<string> Args { get; set; }
+        internal List<string> Context { get; set; }
     }
 }

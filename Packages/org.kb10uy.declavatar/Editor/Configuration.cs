@@ -13,7 +13,7 @@ namespace KusakaFactory.Declavatar
 
         internal string[] LibraryRelativePath;
 
-        public Configuration()
+        internal Configuration()
         {
             LibraryRelativePath = new string[]
             {
@@ -21,19 +21,19 @@ namespace KusakaFactory.Declavatar
             };
         }
 
-        public void SaveEditorUserSettings()
+        internal void SaveEditorUserSettings()
         {
             var configJson = JsonConvert.SerializeObject(this);
             EditorUserSettings.SetConfigValue(EDITOR_USER_SETTINGS_KEY, configJson);
         }
 
-        public static Configuration LoadEditorUserSettings()
+        internal static Configuration LoadEditorUserSettings()
         {
             var configJson = EditorUserSettings.GetConfigValue(EDITOR_USER_SETTINGS_KEY);
             return configJson != null ? JsonConvert.DeserializeObject<Configuration>(configJson) : new Configuration();
         }
 
-        public IEnumerable<string> EnumerateAbsoluteLibraryPaths()
+        internal IEnumerable<string> EnumerateAbsoluteLibraryPaths()
         {
             var assetsPath = Application.dataPath;
             var projectPath = Path.GetDirectoryName(assetsPath);

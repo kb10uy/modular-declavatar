@@ -1,31 +1,24 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using UnityEditor;
 using KusakaFactory.Declavatar.Arbittach;
 
 namespace KusakaFactory.Declavatar.Processor
 {
     internal sealed class ExecuteArbittachPass : IDeclavatarPass
     {
-        private Dictionary<string, AttachmentDefinition> _attachmentDefinitions;
+        private readonly Dictionary<string, IErasedProcessor> _attachmentDefinitions;
 
-        internal ExecuteArbittachPass(Dictionary<string, AttachmentDefinition> attachmentDefinitions)
+        internal ExecuteArbittachPass(Dictionary<string, IErasedProcessor> attachmentDefinitions)
         {
             _attachmentDefinitions = attachmentDefinitions;
         }
 
         public void Execute(DeclavatarContext context)
         {
-            var rawAttachmentGroups = context.AvatarDeclaration.Attachments;
-            foreach (var group in rawAttachmentGroups)
+            foreach (var rawAttachment in context.AvatarDeclaration.Attachments)
             {
-                foreach (var attachment in group.Attachments)
-                {
-                    var definition = _attachmentDefinitions[attachment.Name];
-                    var deserializedObject = definition.Deserialize(attachment, context);
-                    var schemaJson = JsonConvert.SerializeObject(deserializedObject, new JsonSerializerSettings { Formatting = Formatting.Indented });
-                    EditorUtility.DisplayDialog($"Arbittach for {group.Target}", schemaJson, "OK");
-                }
+                var processor = _attachmentDefinitions[rawAttachment.Name];
+                var deserializedObject = processor.Definition.Deserialize(rawAttachment, context);
+                processor.ProcessErased(deserializedObject, context.NdmfContext);
             }
         }
     }

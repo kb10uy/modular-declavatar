@@ -7,12 +7,30 @@ using KusakaFactory.Declavatar.Runtime.Data;
 
 namespace KusakaFactory.Declavatar.Arbittach
 {
-    internal sealed class AttachmentDefinition
+    /// <summary>
+    /// Analyzed attachment type information.
+    /// </summary>
+    public sealed class AttachmentDefinition
     {
+        /// <summary>
+        /// Name that will be registered in comiler.
+        /// </summary>
         public string RegisteredName { get; private set; }
+
+        /// <summary>
+        /// Original type.
+        /// </summary>
         public Type AttachmentType { get; private set; }
+
+        /// <summary>
+        /// Serialized schema.
+        /// </summary>
         public RawAttachmentSchema Schema { get; private set; }
-        public Dictionary<PropertyInfo, PropertyBindPath> Paths { get; private set; }
+
+        /// <summary>
+        /// Map between properties in attachment type and binding path.
+        /// </summary>
+        public IReadOnlyDictionary<PropertyInfo, PropertyBindPath> Paths { get; private set; }
 
         private AttachmentDefinition() { }
 
@@ -293,11 +311,11 @@ namespace KusakaFactory.Declavatar.Arbittach
 
         #endregion
 
-        internal class PropertyBindPath
+        public class PropertyBindPath
         {
-            public string Property { get; set; }
-            public bool Required { get; set; }
-            public string Indexer { get; set; }
+            public string Property { get; internal set; }
+            public bool Required { get; internal set; }
+            public string Indexer { get; internal set; }
         }
     }
 }

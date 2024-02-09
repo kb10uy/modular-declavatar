@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace KusakaFactory.Declavatar.Arbittach
 {
-    internal sealed class RawAttachmentSchema
+    public sealed class RawAttachmentSchema
     {
         public string Name { get; set; }
 

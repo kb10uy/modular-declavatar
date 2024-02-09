@@ -3,16 +3,16 @@ using System;
 namespace KusakaFactory.Declavatar.Arbittach
 {
     [AttributeUsage(AttributeTargets.Assembly, Inherited = false, AllowMultiple = true)]
-    public sealed class ExportArbittachSchemaAttribute : Attribute
+    public sealed class ExportProcessorAttribute : Attribute
     {
-        private readonly Type _schemaType;
+        private readonly Type _processorType;
 
-        public ExportArbittachSchemaAttribute(Type schemaType)
+        public ExportProcessorAttribute(Type processorType)
         {
-            _schemaType = schemaType;
+            _processorType = processorType;
         }
 
-        public Type SchemaType => _schemaType;
+        public Type ProcessorType => _processorType;
         public string Name { get; set; } = null;
     }
 

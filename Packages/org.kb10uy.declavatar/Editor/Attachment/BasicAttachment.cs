@@ -1,8 +1,21 @@
+using Newtonsoft.Json;
+using UnityEditor;
+using nadena.dev.ndmf;
 using KusakaFactory.Declavatar.Arbittach;
+using KusakaFactory.Declavatar.Attachment;
 
-[assembly: ExportArbittachSchema(typeof(KusakaFactory.Declavatar.Attachment.BasicAttachment))]
+[assembly: ExportProcessor(typeof(BasicAttachmentProcessor))]
 namespace KusakaFactory.Declavatar.Attachment
 {
+    public sealed class BasicAttachmentProcessor : ArbittachProcessor<BasicAttachmentProcessor, BasicAttachment>
+    {
+        public override void Process(BasicAttachment deserialized, BuildContext context)
+        {
+            var objectJson = JsonConvert.SerializeObject(deserialized, new JsonSerializerSettings { Formatting = Formatting.Indented });
+            EditorUtility.DisplayDialog($"BasicAttachmentProcessor", objectJson, "OK");
+        }
+    }
+
     [DefineProperty("PropertyX", 1)]
     [DefineProperty("PropertyY", 2)]
     public sealed class BasicAttachment

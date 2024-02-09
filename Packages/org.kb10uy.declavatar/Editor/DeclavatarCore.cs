@@ -40,6 +40,22 @@ namespace KusakaFactory.Declavatar
             NativeMethods.declavatar_free(declavatarState);
         }
 
+        internal static unsafe string GetLastError(void* declavatarState)
+        {
+            byte* message = null;
+            uint messageLength = 0;
+            if (NativeMethods.declavatar_last_error(declavatarState, &message, &messageLength) != DeclavatarStatus.Success)
+            {
+                return null;
+            }
+            if (message == null) return null;
+
+            var buffer = new byte[messageLength];
+            Marshal.Copy((IntPtr)message, buffer, 0, (int)messageLength);
+            var messageString = Encoding.UTF8.GetString(buffer);
+            return messageString;
+        }
+
         internal static unsafe void AddLibraryPath(void* declavatarState, string path)
         {
             var utf8Bytes = Encoding.UTF8.GetBytes(path);
@@ -90,10 +106,17 @@ namespace KusakaFactory.Declavatar
 
             switch (status)
             {
-                case DeclavatarStatus.Success: return compiledState;
-                case DeclavatarStatus.JsonError: throw new InvalidOperationException("internal JSON error");
-                case DeclavatarStatus.InvalidValue: throw new InvalidOperationException("invalid format specified");
-                default: throw new InvalidOperationException("invalid pointer");
+                case DeclavatarStatus.Success:
+                case DeclavatarStatus.CompileError:
+                    return compiledState;
+                case DeclavatarStatus.Utf8Error:
+                case DeclavatarStatus.JsonError:
+                    throw new InvalidOperationException(GetLastError(declavatarState));
+                case DeclavatarStatus.InvalidValue:
+                case DeclavatarStatus.InvalidPointer:
+                    throw new InvalidOperationException("invalid pointer");
+                default:
+                    throw new InvalidOperationException();
             }
         }
 

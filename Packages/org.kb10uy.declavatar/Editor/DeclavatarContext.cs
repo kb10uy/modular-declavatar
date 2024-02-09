@@ -20,6 +20,7 @@ namespace KusakaFactory.Declavatar
         public bool CreateMenuInstaller { get; }
 
         public Avatar AvatarDeclaration { get; }
+        public BuildContext NdmfContext { get; }
         public AacFlBase Aac { get; }
 
         private Localizer _localizer;
@@ -49,6 +50,7 @@ namespace KusakaFactory.Declavatar
             }
 
             AbsoluteAvatarRoot = ndmfContext.AvatarRootObject;
+            NdmfContext = ndmfContext;
             Aac = AacV1.Create(new AacConfiguration
             {
                 // MEMO: should it use avatar name from decl file?

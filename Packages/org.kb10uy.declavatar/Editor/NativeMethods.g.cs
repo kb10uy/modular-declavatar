@@ -28,6 +28,10 @@ namespace KusakaFactory.Declavatar
         [DllImport(__DllName, EntryPoint = "declavatar_free", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern DeclavatarStatus declavatar_free(void* declavatar_state);
 
+        /// <summary>Fetches last error message.  # Safety Given pointer `da` must be valid.</summary>
+        [DllImport(__DllName, EntryPoint = "declavatar_last_error", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern DeclavatarStatus declavatar_last_error(void* declavatar_state, byte** message, uint* message_len);
+
         /// <summary>Clears defined symbols/localizations/arbittach definitions.  # Safety Given pointer `da` must be valid.</summary>
         [DllImport(__DllName, EntryPoint = "declavatar_clear", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern DeclavatarStatus declavatar_clear(void* declavatar_state);

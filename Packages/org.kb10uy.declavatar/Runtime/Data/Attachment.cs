@@ -6,12 +6,6 @@ using Newtonsoft.Json.Linq;
 
 namespace KusakaFactory.Declavatar.Runtime.Data
 {
-    public sealed class AttachmentGroup
-    {
-        public string Target { get; set; }
-        public List<Attachment> Attachments { get; set; }
-    }
-
     public sealed class Attachment
     {
         public string Name { get; set; }

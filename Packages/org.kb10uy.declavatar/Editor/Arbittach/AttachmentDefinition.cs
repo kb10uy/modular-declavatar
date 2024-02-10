@@ -192,7 +192,7 @@ namespace KusakaFactory.Declavatar.Arbittach
 
         #region Attachment Deserialization
 
-        internal object Deserialize(Runtime.Data.Attachment rawAttachment, DeclavatarContext context)
+        internal object Deserialize(Attachment rawAttachment, DeclavatarContext context)
         {
             // TODO: use Expression.XXXX for performance
 
@@ -288,7 +288,7 @@ namespace KusakaFactory.Declavatar.Arbittach
                         foreach (var rawItem in rawValues)
                         {
                             var value = ConstructDeserializedValue(rawItem, context, itemType);
-                            addMethod.Invoke(listInstance, new object[] { });
+                            addMethod.Invoke(listInstance, new object[] { value });
                         }
                         return listInstance;
                     }

@@ -43,27 +43,47 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             )
             {
                 var obj = JObject.Load(reader) as JToken;
-
+                var valueType = obj["type"].Value<string>();
                 var contentToken = obj["content"];
-                switch (obj["type"].Value<string>())
+
+                var attachmentValue = new AttachmentValue { Type = valueType, Content = null };
+                switch (valueType)
                 {
-                    case "Null": return new AttachmentValue { Type = "Null", Content = null };
-                    case "Boolean": return new AttachmentValue { Type = "Boolean", Content = contentToken.Value<bool>() };
-                    case "Integer": return new AttachmentValue { Type = "Integer", Content = contentToken.Value<int>() };
-                    case "Float": return new AttachmentValue { Type = "Float", Content = contentToken.Value<float>() };
-                    case "String": return new AttachmentValue { Type = "String", Content = contentToken.Value<string>() };
-                    case "Vector": return new AttachmentValue { Type = "Vector", Content = contentToken.Values<float>().ToList() };
-                    case "GameObject": return new AttachmentValue { Type = "GameObject", Content = contentToken.Value<string>() };
-                    case "Material": return new AttachmentValue { Type = "Material", Content = contentToken.Value<string>() };
-                    case "AnimationClip": return new AttachmentValue { Type = "AnimationClip", Content = contentToken.Value<string>() };
+                    case "Null":
+                        break;
+                    case "Boolean":
+                        attachmentValue.Content = contentToken.Value<bool>();
+                        break;
+                    case "Integer":
+                        attachmentValue.Content = contentToken.Value<int>();
+                        break;
+                    case "Float":
+                        attachmentValue.Content = contentToken.Value<float>();
+                        break;
+                    case "String":
+                        attachmentValue.Content = contentToken.Value<string>();
+                        break;
+                    case "Vector":
+                        attachmentValue.Content = contentToken.Values<float>().ToList();
+                        break;
+                    case "GameObject":
+                        attachmentValue.Content = contentToken.Value<string>();
+                        break;
+                    case "Material":
+                        attachmentValue.Content = contentToken.Value<string>();
+                        break;
+                    case "AnimationClip":
+                        attachmentValue.Content = contentToken.Value<string>();
+                        break;
 
                     case "List":
                     case "Tuple":
-                        var values = contentToken.ToArray().Select((t) => t.ToObject<AttachmentValue>(serializer)).ToList();
-                        return new AttachmentValue { Type = "List", Content = values };
+                        attachmentValue.Content = contentToken.ToArray().Select((t) => t.ToObject<AttachmentValue>(serializer)).ToList();
+                        break;
 
                     default: throw new JsonException("invalid attachment value type");
                 }
+                return attachmentValue;
             }
 
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)

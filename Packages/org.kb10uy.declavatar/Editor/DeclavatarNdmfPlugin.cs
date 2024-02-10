@@ -235,7 +235,7 @@ namespace KusakaFactory.Declavatar
                     "Information" => ErrorSeverity.Information,
                     "Warning" => ErrorSeverity.NonFatal,
                     "Error" => ErrorSeverity.Error,
-                    _ => throw new DeclavatarInternalException("unknown severity"),
+                    _ => throw new DeclavatarInternalException($"unknown severity: {log.Severity}"),
                 };
                 ErrorReport.ReportError(_localizer, severity, log.Kind, log.Args.ToArray());
             }

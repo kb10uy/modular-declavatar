@@ -18,7 +18,7 @@ namespace KusakaFactory.Declavatar.Processor
             {
                 var processor = _attachmentDefinitions[rawAttachment.Name];
                 var deserializedObject = processor.Definition.Deserialize(rawAttachment, context);
-                processor.ProcessErased(deserializedObject, context.NdmfContext);
+                processor.ProcessErased(deserializedObject, context);
             }
         }
     }

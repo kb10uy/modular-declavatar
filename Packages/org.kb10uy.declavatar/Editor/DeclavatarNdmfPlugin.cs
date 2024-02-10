@@ -197,13 +197,13 @@ namespace KusakaFactory.Declavatar
         {
             var compiledComponents = ctx.AvatarRootObject.GetComponentsInChildren<GenerateByDeclavatar.CompiledDeclavatar>();
             // TODO: add ordering feature by int
-            var exports = new DeclavatarExports(compiledComponents);
+            var exports = new AggregatedExports(compiledComponents);
             foreach (var component in compiledComponents) ProcessForComponent(ctx, exports, component);
         }
 
-        private void ProcessForComponent(BuildContext ctx, DeclavatarExports exports, GenerateByDeclavatar.CompiledDeclavatar compiled)
+        private void ProcessForComponent(BuildContext ctx, AggregatedExports exports, GenerateByDeclavatar.CompiledDeclavatar compiled)
         {
-            var context = new DeclavatarContext(ctx, _localizer, exports, compiled);
+            var context = new DeclavatarContext(ctx, _localizer, compiled, exports);
             foreach (var pass in _passes) pass.Execute(context);
         }
 

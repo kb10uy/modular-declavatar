@@ -13,10 +13,26 @@ namespace KusakaFactory.Declavatar.Processor
 {
     internal sealed class GenerateControllerPass : IDeclavatarPass
     {
+        private AacFlBase _currentAac;
+
         public void Execute(DeclavatarContext context)
         {
-            var fxAnimator = context.Aac.NewAnimatorController();
+            _currentAac = AacV1.Create(new AacConfiguration
+            {
+                // MEMO: should it use avatar name from decl file?
+                SystemName = "Declavatar",
 
+                // MEMO: should it be Declaration Root?
+                AnimatorRoot = context.NdmfContext.AvatarRootTransform,
+                DefaultValueRoot = context.NdmfContext.AvatarRootTransform,
+
+                AssetKey = GUID.Generate().ToString(),
+                AssetContainer = context.NdmfContext.AssetContainer,
+                ContainerMode = AacConfiguration.Container.OnlyWhenPersistenceRequired,
+                DefaultsProvider = new AacDefaultsProvider(false),
+            });
+
+            var fxAnimator = _currentAac.NewAnimatorController();
             foreach (var animationGroup in context.AvatarDeclaration.FxController)
             {
                 switch (animationGroup.Content)
@@ -99,7 +115,7 @@ namespace KusakaFactory.Declavatar.Processor
             WriteStateAnimation(context, layer, disabledState, sg.Disabled);
             WriteStateAnimation(context, layer, enabledState, sg.Enabled);
 
-            var parameters = layer.BoolParameters(context.AllExports.GetGateGuardParameters(sg.Gate).ToArray());
+            var parameters = layer.BoolParameters(context.Exports.GetGateGuardParameters(sg.Gate).ToArray());
             disabledState.TransitionsTo(enabledState).When(parameters.IsAnyTrue());
             enabledState.TransitionsTo(disabledState).When(parameters.AreFalse());
         }
@@ -270,7 +286,7 @@ namespace KusakaFactory.Declavatar.Processor
 
         private AacFlClip CreateInlineClip(DeclavatarContext context, LayerAnimation.Inline inline)
         {
-            var inlineClip = context.Aac.NewClip();
+            var inlineClip = _currentAac.NewClip();
             foreach (var target in inline.Targets)
             {
                 try
@@ -311,7 +327,7 @@ namespace KusakaFactory.Declavatar.Processor
             var groups = keyedInline.Keyframes
                 .SelectMany((kf) => kf.Targets.Select((t) => (kf.Value, Target: t)))
                 .GroupBy((p) => p.Target.AsGroupingKey());
-            var keyedInlineClip = context.Aac.NewClip().NonLooping();
+            var keyedInlineClip = _currentAac.NewClip().NonLooping();
             keyedInlineClip.Animating((e) =>
             {
                 foreach (var group in groups)

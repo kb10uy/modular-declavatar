@@ -21,7 +21,7 @@ namespace KusakaFactory.Declavatar.Arbittach
         /// </summary>
         /// <param name="deserialized">Deserialized attachment object from avatar definition.</param>
         /// <param name="context">Current BuildContext from NDMF.</param>
-        public abstract void Process(TAttachment deserialized, BuildContext context);
+        public abstract void Process(TAttachment deserialized, DeclavatarContext context);
 
         #region Internal
 
@@ -32,7 +32,7 @@ namespace KusakaFactory.Declavatar.Arbittach
             Definition = definition;
         }
 
-        void IErasedProcessor.ProcessErased(object deserializedErased, BuildContext context)
+        void IErasedProcessor.ProcessErased(object deserializedErased, DeclavatarContext context)
         {
             var deserialized = (TAttachment)deserializedErased;
             Process(deserialized, context);
@@ -45,6 +45,6 @@ namespace KusakaFactory.Declavatar.Arbittach
     {
         internal AttachmentDefinition Definition { get; }
         internal void Configure(AttachmentDefinition definition);
-        internal void ProcessErased(object deserializedErased, BuildContext context);
+        internal void ProcessErased(object deserializedErased, DeclavatarContext context);
     }
 }

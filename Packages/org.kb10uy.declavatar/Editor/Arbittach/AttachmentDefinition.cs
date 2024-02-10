@@ -34,11 +34,11 @@ namespace KusakaFactory.Declavatar.Arbittach
 
         private AttachmentDefinition() { }
 
-        internal static AttachmentDefinition Create(Type attachmentType, string customName)
+        internal static AttachmentDefinition Create(Type attachmentType, string attachmentName)
         {
             var definition = new AttachmentDefinition
             {
-                RegisteredName = customName ?? attachmentType.Name,
+                RegisteredName = attachmentName,
                 AttachmentType = attachmentType,
                 Paths = EnumerateBoundProperties(attachmentType).ToDictionary((p) => p.Item1, (p) => p.Item2),
             };

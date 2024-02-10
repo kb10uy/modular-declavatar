@@ -1,3 +1,3 @@
-﻿namespace KusakaFactory.Declavatar.Runtime.Data
+namespace KusakaFactory.Declavatar.Runtime.Data
 {
 }

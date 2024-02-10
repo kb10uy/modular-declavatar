@@ -4,41 +4,55 @@ using UnityEngine;
 using UnityEditor;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
-using AnimatorAsCode.V1;
 using KusakaFactory.Declavatar.Runtime;
 using KusakaFactory.Declavatar.Runtime.Data;
 using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 namespace KusakaFactory.Declavatar
 {
-    internal sealed class DeclavatarContext
+    /// <summary>
+    /// Contextual information set per declaration file.
+    /// </summary>
+    public sealed class DeclavatarContext
     {
-        internal DeclavatarExports AllExports { get; }
-        internal GameObject AbsoluteAvatarRoot { get; }
-        internal GameObject DeclarationRoot { get; }
-        internal GameObject MenuInstallRoot { get; }
-        internal bool CreateMenuInstaller { get; }
+        /// <summary>
+        /// Current BuildContext from NDMF pass.
+        /// </summary>
+        public BuildContext NdmfContext { get; }
 
-        internal Avatar AvatarDeclaration { get; }
-        internal BuildContext NdmfContext { get; }
-        internal AacFlBase Aac { get; }
+        /// <summary>
+        /// Compiled and deserialized avatar declaration.
+        /// </summary>
+        public Avatar AvatarDeclaration { get; }
 
-        private Localizer _localizer;
-        private Dictionary<string, Material> _externalMaterials;
-        private Dictionary<string, AnimationClip> _externalAnimationClips;
-        private Dictionary<string, Renderer> _rendererSearchCache;
-        private Dictionary<string, SkinnedMeshRenderer> _skinnedMeshRendererSearchCache;
-        private Dictionary<string, GameObject> _gameObjectSearchCache;
-        private HashSet<string> _searchedPathCache;
+        /// <summary>
+        /// Aggregated exports over the whole avatar.
+        /// </summary>
+        public AggregatedExports Exports { get; }
 
-        internal DeclavatarContext(BuildContext ndmfContext, Localizer localizer, DeclavatarExports exports, GenerateByDeclavatar.CompiledDeclavatar compiled)
+        /// <summary>
+        /// Declaration root object of this declaration.
+        /// </summary>
+        public GameObject DeclarationRoot { get; }
+
+        /// <summary>
+        /// Menu root object of this declaration.
+        /// </summary>
+        public GameObject MenuInstallRoot { get; }
+
+        /// <summary>
+        /// Whether it should create the MenuInstaller component for this declaration.
+        /// </summary>
+        public bool CreateMenuInstaller { get; }
+
+        internal DeclavatarContext(BuildContext ndmfContext, Localizer localizer, GenerateByDeclavatar.CompiledDeclavatar compiled, AggregatedExports exports)
         {
-            AllExports = exports;
+            NdmfContext = ndmfContext;
+
             AvatarDeclaration = compiled.CompiledAvatar;
-            _externalMaterials = compiled.ExternalMaterials;
-            _externalAnimationClips = compiled.ExternalAnimationClips;
-            CreateMenuInstaller = compiled.CreateMenuInstallerComponent;
+            Exports = exports;
             DeclarationRoot = compiled.DeclarationRoot != null ? compiled.DeclarationRoot : compiled.gameObject;
+            CreateMenuInstaller = compiled.CreateMenuInstallerComponent;
             if (compiled.MenuInstallTarget != null)
             {
                 MenuInstallRoot = compiled.MenuInstallTarget;
@@ -49,31 +63,25 @@ namespace KusakaFactory.Declavatar
                 MenuInstallRoot.transform.parent = DeclarationRoot.transform;
             }
 
-            AbsoluteAvatarRoot = ndmfContext.AvatarRootObject;
-            NdmfContext = ndmfContext;
-            Aac = AacV1.Create(new AacConfiguration
-            {
-                // MEMO: should it use avatar name from decl file?
-                SystemName = "Declavatar",
-
-                // MEMO: should it be Declaration Root?
-                AnimatorRoot = ndmfContext.AvatarRootTransform,
-                DefaultValueRoot = ndmfContext.AvatarRootTransform,
-
-                AssetKey = GUID.Generate().ToString(),
-                AssetContainer = ndmfContext.AssetContainer,
-                ContainerMode = AacConfiguration.Container.OnlyWhenPersistenceRequired,
-                DefaultsProvider = new AacDefaultsProvider(false),
-            });
-
             _localizer = localizer;
-            _rendererSearchCache = new Dictionary<string, Renderer>();
-            _skinnedMeshRendererSearchCache = new Dictionary<string, SkinnedMeshRenderer>();
-            _gameObjectSearchCache = new Dictionary<string, GameObject>();
-            _searchedPathCache = new HashSet<string>();
+            _externalMaterials = compiled.ExternalMaterials;
+            _externalAnimationClips = compiled.ExternalAnimationClips;
         }
 
-        internal Renderer FindRenderer(string path)
+        #region Hierarchy Search
+
+        private Dictionary<string, Renderer> _rendererSearchCache = new();
+        private Dictionary<string, SkinnedMeshRenderer> _skinnedMeshRendererSearchCache = new();
+        private Dictionary<string, GameObject> _gameObjectSearchCache = new();
+        private HashSet<string> _searchedPathCache = new();
+
+        /// <summary>
+        /// Finds Renderer component in the declaring object by GameObject path.
+        /// </summary>
+        /// <param name="path">FindGameObject based path.</param>
+        /// <returns>Renderer.</returns>
+        /// <exception cref="DeclavatarRuntimeException">Renderer not found.</exception>
+        public Renderer FindRenderer(string path)
         {
             var cachedPath = $"mr://{path}";
             if (_searchedPathCache.Contains(cachedPath))
@@ -95,7 +103,13 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        internal SkinnedMeshRenderer FindSkinnedMeshRenderer(string path)
+        /// <summary>
+        /// Finds SkinnedMeshRenderer component in the declaring object by GameObject path.
+        /// </summary>
+        /// <param name="path">FindGameObject based path.</param>
+        /// <returns>SkinnedMeshRenderer.</returns>
+        /// <exception cref="DeclavatarRuntimeException">SkinnedMeshRenderer not found.</exception>
+        public SkinnedMeshRenderer FindSkinnedMeshRenderer(string path)
         {
             var cachedPath = $"smr://{path}";
             if (_searchedPathCache.Contains(cachedPath))
@@ -117,7 +131,13 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        internal GameObject FindGameObject(string path)
+        /// <summary>
+        /// Finds GameObject in the declaring object by GameObject path.
+        /// </summary>
+        /// <param name="path">FindGameObject based path.</param>
+        /// <returns>GameObject.</returns>
+        /// <exception cref="DeclavatarRuntimeException">GameObject not found.</exception>
+        public GameObject FindGameObject(string path)
         {
             var cachedPath = $"go://{path}";
             if (_searchedPathCache.Contains(cachedPath))
@@ -138,19 +158,44 @@ namespace KusakaFactory.Declavatar
             }
         }
 
-        internal Material GetExternalMaterial(string key)
+        #endregion
+
+        #region External Assets
+
+        private Dictionary<string, Material> _externalMaterials;
+        private Dictionary<string, AnimationClip> _externalAnimationClips;
+
+        /// <summary>
+        /// Searches external asset Material.
+        /// </summary>
+        /// <param name="key">Asset key.</param>
+        /// <returns>Defined Material.</returns>
+        /// <exception cref="DeclavatarRuntimeException">Key not found.</exception>
+        public Material GetExternalMaterial(string key)
         {
             if (_externalMaterials.TryGetValue(key, out var material)) return material;
             ReportRuntimeError("runtime.material_not_found", key);
             throw new DeclavatarRuntimeException($"External material {key} not found");
         }
 
+        /// <summary>
+        /// Searches external asset AnimationClip.
+        /// </summary>
+        /// <param name="key">Asset key.</param>
+        /// <returns>Defined AnimationClip.</returns>
+        /// <exception cref="DeclavatarRuntimeException">Key not found.</exception>
         internal AnimationClip GetExternalAnimationClip(string key)
         {
             if (_externalAnimationClips.TryGetValue(key, out var animationClip)) return animationClip;
             ReportRuntimeError("runtime.animation_not_found", key);
             throw new DeclavatarRuntimeException($"External animation clip {key} not found");
         }
+
+        #endregion
+
+        #region Error Reporting
+
+        private Localizer _localizer;
 
         internal void ReportRuntimeError(string errorKey, params object[] args)
         {
@@ -161,21 +206,31 @@ namespace KusakaFactory.Declavatar
         {
             ErrorReport.ReportError(_localizer, ErrorSeverity.InternalError, errorKey, args);
         }
+
+        #endregion
     }
 
-    internal sealed class DeclavatarExports
+    /// <summary>
+    /// Aggregated exports block data over the root avatar.
+    /// </summary>
+    public sealed class AggregatedExports
     {
         private HashSet<string> _gates;
         private Dictionary<string, List<string>> _guards;
 
-        internal DeclavatarExports(GenerateByDeclavatar.CompiledDeclavatar[] compiledComponents)
+        internal AggregatedExports(GenerateByDeclavatar.CompiledDeclavatar[] compiledComponents)
         {
             _gates = new HashSet<string>();
             _guards = new Dictionary<string, List<string>>();
             ConstructGatesAndGuards(compiledComponents);
         }
 
-        internal IReadOnlyList<string> GetGateGuardParameters(string gate)
+        /// <summary>
+        /// Get list of parameter names that are driven by specified gate.
+        /// </summary>
+        /// <param name="gate">Gate name.</param>
+        /// <returns>List of parameters, or null if the gate does not exist.</returns>
+        public IReadOnlyList<string> GetGateGuardParameters(string gate)
         {
             if (_guards.TryGetValue(gate, out var guardParameters))
             {

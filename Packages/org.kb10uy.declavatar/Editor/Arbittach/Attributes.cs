@@ -9,17 +9,19 @@ namespace KusakaFactory.Declavatar.Arbittach
     public sealed class ExportsProcessorAttribute : Attribute
     {
         private readonly Type _processorType;
+        private readonly string _name;
 
         /// <summary>
         /// </summary>
         /// <param name="processorType">Exporting type.</param>
-        public ExportsProcessorAttribute(Type processorType)
+        public ExportsProcessorAttribute(Type processorType, string name)
         {
             _processorType = processorType;
+            _name = name;
         }
 
         public Type ProcessorType => _processorType;
-        public string Name { get; set; } = null;
+        public string Name => _name;
     }
 
     /// <summary>

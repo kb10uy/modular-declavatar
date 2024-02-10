@@ -1,4 +1,4 @@
-﻿namespace KusakaFactory.Declavatar.Runtime.Data
+namespace KusakaFactory.Declavatar.Runtime.Data
 {
     public sealed class Asset
     {

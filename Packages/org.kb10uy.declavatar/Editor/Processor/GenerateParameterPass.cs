@@ -19,11 +19,12 @@ namespace KusakaFactory.Declavatar.Processor
                 .Select((pd) => new ParameterConfig
                 {
                     nameOrPrefix = pd.Name,
-                    syncType = pd.ConvertToMASyncType(),
+                    internalParameter = pd.Unique,
+                    hasExplicitDefaultValue = pd.ExplicitDefault,
                     defaultValue = pd.ValueType.ConvertToVRCParameterValue(),
                     saved = pd.Scope.Save ?? false,
+                    syncType = pd.ConvertToMASyncType(),
                     localOnly = pd.Scope.Type != "Synced",
-                    internalParameter = pd.Unique,
                     isPrefix = false, // TODO: PhysBones prefix
                 });
             parametersComponent.parameters.AddRange(newParameters);

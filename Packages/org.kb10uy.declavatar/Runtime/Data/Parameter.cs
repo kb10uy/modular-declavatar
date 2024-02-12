@@ -6,6 +6,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
         public ParameterType ValueType { get; set; }
         public ParameterScope Scope { get; set; }
         public bool Unique { get; set; }
+        public bool ExplicitDefault { get; set; }
     }
 
     public sealed class ParameterType

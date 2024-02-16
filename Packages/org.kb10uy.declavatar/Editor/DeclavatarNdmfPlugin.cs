@@ -97,24 +97,23 @@ namespace KusakaFactory.Declavatar
             {
                 if (component.Definition == null) continue;
 
-                var (materials, animationClips, localizations) = AggregateExternalAssets(component.ExternalAssets);
+                var externalAssets = AggregateErasedExternalAssets(component.ExternalAssets);
                 var symbols = component.Symbols.ToHashSet();
                 var (declaration, logs) = CompileDeclaration(
                     component.Definition.text,
                     (DeclavatarFormat)component.Format,
                     symbols,
-                    localizations
+                    new Dictionary<string, string>()
                 );
                 ReportLogsForNdmf(logs);
                 if (declaration == null) continue;
 
                 var compiledComponent = component.gameObject.AddComponent<GenerateByDeclavatar.CompiledDeclavatar>();
                 compiledComponent.CompiledAvatar = declaration;
+                compiledComponent.ExternalAssets = externalAssets;
                 compiledComponent.DeclarationRoot = component.DeclarationRoot;
                 compiledComponent.MenuInstallTarget = component.InstallTarget;
                 compiledComponent.CreateMenuInstallerComponent = component.GenerateMenuInstaller;
-                compiledComponent.ExternalMaterials = materials;
-                compiledComponent.ExternalAnimationClips = animationClips;
             }
 
             foreach (var component in declavatarComponents) UnityEngine.Object.DestroyImmediate(component);
@@ -157,36 +156,16 @@ namespace KusakaFactory.Declavatar
             return (definition, logs);
         }
 
-        private (
-            Dictionary<string, Material>,
-            Dictionary<string, AnimationClip>,
-            Dictionary<string, string>
-        ) AggregateExternalAssets(
-            ExternalAsset[] externalAssets
-        )
+        private Dictionary<string, (string, UnityEngine.Object)> AggregateErasedExternalAssets(DeclavatarExternalAssets[] externalAssets)
         {
-            var materials = new Dictionary<string, Material>();
-            var animationClips = new Dictionary<string, AnimationClip>();
-            var localizations = new Dictionary<string, string>();
-
-            foreach (var externalAsset in externalAssets.Where((ea) => ea != null))
+            var aggregated = new Dictionary<string, (string, UnityEngine.Object)>();
+            foreach (var entry in externalAssets.Where((ea) => ea != null).SelectMany((ea) => ea.Entries))
             {
-                var validMaterials = externalAsset
-                    .Materials
-                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && p.Material != null);
-                var validAnimationClips = externalAsset
-                    .Animations
-                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && p.Animation != null);
-                var validLocalizations = externalAsset
-                    .Localizations
-                    .Where((p) => !string.IsNullOrWhiteSpace(p.Key) && !string.IsNullOrWhiteSpace(p.Localization));
-
-                foreach (var pair in validMaterials) materials.Add(pair.Key, pair.Material);
-                foreach (var pair in validAnimationClips) animationClips.Add(pair.Key, pair.Animation);
-                foreach (var pair in validLocalizations) localizations.Add(pair.Key, pair.Localization);
+                if (string.IsNullOrWhiteSpace(entry.Key)) continue;
+                if (entry.Asset == null) continue;
+                aggregated.Add(entry.Key, (entry.Type, entry.Asset));
             }
-
-            return (materials, animationClips, localizations);
+            return aggregated;
         }
 
         #endregion

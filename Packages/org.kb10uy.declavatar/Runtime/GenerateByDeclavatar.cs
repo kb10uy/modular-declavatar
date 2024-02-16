@@ -9,7 +9,7 @@ namespace KusakaFactory.Declavatar.Runtime
     {
         public DeclarationFormat Format = DeclarationFormat.SExpression;
         public TextAsset Definition;
-        public ExternalAsset[] ExternalAssets;
+        public DeclavatarExternalAssets[] ExternalAssets;
         public string[] Symbols;
 
         public GameObject DeclarationRoot;
@@ -25,8 +25,7 @@ namespace KusakaFactory.Declavatar.Runtime
         public class CompiledDeclavatar : MonoBehaviour, IEditorOnly
         {
             public Avatar CompiledAvatar;
-            public Dictionary<string, Material> ExternalMaterials;
-            public Dictionary<string, AnimationClip> ExternalAnimationClips;
+            public Dictionary<string, (string, Object)> ExternalAssets;
 
             public GameObject DeclarationRoot;
             public GameObject MenuInstallTarget;

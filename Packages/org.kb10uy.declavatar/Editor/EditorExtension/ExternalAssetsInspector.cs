@@ -46,9 +46,8 @@ namespace KusakaFactory.Declavatar.EditorExtension
         private void AddItem(ReorderableList list)
         {
             var lastIndex = _entriesProperty.arraySize;
-            Debug.Log($"Adding {lastIndex}");
-
             _entriesProperty.InsertArrayElementAtIndex(lastIndex);
+
             var newItemProperty = _entriesProperty.GetArrayElementAtIndex(lastIndex);
             newItemProperty.FindPropertyRelative("Key").stringValue = "";
             newItemProperty.FindPropertyRelative("Type").stringValue = "Material";

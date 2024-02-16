@@ -64,8 +64,7 @@ namespace KusakaFactory.Declavatar
             }
 
             _localizer = localizer;
-            _externalMaterials = compiled.ExternalMaterials;
-            _externalAnimationClips = compiled.ExternalAnimationClips;
+            _externalAssets = compiled.ExternalAssets;
         }
 
         #region Hierarchy Search
@@ -162,8 +161,7 @@ namespace KusakaFactory.Declavatar
 
         #region External Assets
 
-        private Dictionary<string, Material> _externalMaterials;
-        private Dictionary<string, AnimationClip> _externalAnimationClips;
+        private Dictionary<string, (string Type, Object Asset)> _externalAssets;
 
         /// <summary>
         /// Searches external asset Material.
@@ -173,7 +171,7 @@ namespace KusakaFactory.Declavatar
         /// <exception cref="DeclavatarRuntimeException">Key not found.</exception>
         public Material GetExternalMaterial(string key)
         {
-            if (_externalMaterials.TryGetValue(key, out var material)) return material;
+            if (_externalAssets.TryGetValue(key, out var pair) && pair.Type == nameof(Material)) return pair.Asset as Material;
             ReportRuntimeError("runtime.material_not_found", key);
             throw new DeclavatarRuntimeException($"External material {key} not found");
         }
@@ -186,7 +184,7 @@ namespace KusakaFactory.Declavatar
         /// <exception cref="DeclavatarRuntimeException">Key not found.</exception>
         internal AnimationClip GetExternalAnimationClip(string key)
         {
-            if (_externalAnimationClips.TryGetValue(key, out var animationClip)) return animationClip;
+            if (_externalAssets.TryGetValue(key, out var pair) && pair.Type == nameof(AnimationClip)) return pair.Asset as AnimationClip;
             ReportRuntimeError("runtime.animation_not_found", key);
             throw new DeclavatarRuntimeException($"External animation clip {key} not found");
         }

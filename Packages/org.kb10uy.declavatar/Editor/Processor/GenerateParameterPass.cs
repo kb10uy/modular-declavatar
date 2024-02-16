@@ -8,7 +8,7 @@ namespace KusakaFactory.Declavatar.Processor
         public void Execute(DeclavatarContext context)
         {
             // MA Parameters modifies itself and child GameObject
-            // It must be on _rootGameObject
+            // It must be on DeclarationRoot
             var parametersComponent =
                 context.DeclarationRoot.GetComponent<ModularAvatarParameters>() ??
                 context.DeclarationRoot.AddComponent<ModularAvatarParameters>();
@@ -25,7 +25,7 @@ namespace KusakaFactory.Declavatar.Processor
                     saved = pd.Scope.Save ?? false,
                     syncType = pd.ConvertToMASyncType(),
                     localOnly = pd.Scope.Type != "Synced",
-                    isPrefix = false, // TODO: PhysBones prefix
+                    isPrefix = false, // TODO: PhysBones prefix support
                 });
             parametersComponent.parameters.AddRange(newParameters);
         }

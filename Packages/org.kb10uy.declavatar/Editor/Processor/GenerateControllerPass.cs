@@ -22,9 +22,8 @@ namespace KusakaFactory.Declavatar.Processor
                 // MEMO: should it use avatar name from decl file?
                 SystemName = "Declavatar",
 
-                // MEMO: should it be Declaration Root?
-                AnimatorRoot = context.NdmfContext.AvatarRootTransform,
-                DefaultValueRoot = context.NdmfContext.AvatarRootTransform,
+                AnimatorRoot = context.DeclarationRoot.transform,
+                DefaultValueRoot = context.DeclarationRoot.transform,
 
                 AssetKey = GUID.Generate().ToString(),
                 AssetContainer = context.NdmfContext.AssetContainer,
@@ -62,7 +61,7 @@ namespace KusakaFactory.Declavatar.Processor
             var mergeAnimator = context.DeclarationRoot.AddComponent<ModularAvatarMergeAnimator>();
             mergeAnimator.animator = fxAnimator.AnimatorController;
             mergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
-            mergeAnimator.pathMode = MergeAnimatorPathMode.Absolute;
+            mergeAnimator.pathMode = MergeAnimatorPathMode.Relative;
         }
 
         private void GenerateGroupLayer(DeclavatarContext context, AacFlController controller, string name, Layer.GroupLayer g)

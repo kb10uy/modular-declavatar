@@ -5,6 +5,8 @@ using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 namespace KusakaFactory.Declavatar.Runtime
 {
+    [Icon("Packages/org.kb10uy.declavatar/Resources/Images/declavatar-logo.png")]
+    [AddComponentMenu("Declavatar/Attach Declavatar Script")]
     public class GenerateByDeclavatar : MonoBehaviour, IEditorOnly
     {
         public DeclarationFormat Format = DeclarationFormat.SExpression;

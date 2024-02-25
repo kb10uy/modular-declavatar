@@ -29,20 +29,24 @@ namespace KusakaFactory.Declavatar.EditorExtension
         public override void OnInspectorGUI()
         {
             EditorGUILayout.BeginVertical();
-            GUILayout.Label("Declavatar", Constants.TitleLabel);
+            GUILayout.Label("declavatar", Constants.TitleLabel);
             GUILayout.Label("Declarative Avatar Assets Composing Tool, by kb10uy", EditorStyles.centeredGreyMiniLabel);
             EditorGUILayout.Separator();
             EditorGUILayout.EndVertical();
 
             serializedObject.Update();
+
+            GUILayout.Label("Declaration Script", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_formatProperty);
             EditorGUILayout.PropertyField(_definitionProperty);
             EditorGUILayout.Space();
 
+            GUILayout.Label("Preprocess Settings", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_externalAssetsProperty);
             EditorGUILayout.PropertyField(_symbolsProperty);
             EditorGUILayout.Space();
 
+            GUILayout.Label("Installation Settings", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_declarationRootProperty);
             EditorGUILayout.PropertyField(_installTargetProperty);
             EditorGUILayout.PropertyField(_generateMenuInstallerProperty);

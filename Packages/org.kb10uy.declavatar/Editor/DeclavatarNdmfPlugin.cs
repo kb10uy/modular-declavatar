@@ -247,7 +247,7 @@ namespace KusakaFactory.Declavatar
 
         private static Dictionary<string, string> GetRuntimeLocalization(string locale)
         {
-            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>($"Packages/org.kb10uy.declavatar/Localization/{locale}.json");
+            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>($"Packages/org.kb10uy.declavatar/Resources/Localizations/{locale}.json");
             return JsonConvert.DeserializeObject<Dictionary<string, string>>(asset.text);
         }
     }

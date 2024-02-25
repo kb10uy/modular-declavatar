@@ -315,13 +315,13 @@ namespace KusakaFactory.Declavatar.Processor
                                     case MaterialValue.Float floatValue:
                                         editClip.Animates(mpr, qualifiedName).WithOneFrame(floatValue.Value);
                                         break;
-                                    case MaterialValue.VectorRgba rgbaValue:
-                                        var rgbaColor = new Color(rgbaValue.Value[0], rgbaValue.Value[1], rgbaValue.Value[2], rgbaValue.Value[3]);
+                                    case MaterialValue.Color colorValue:
+                                        var rgbaColor = new Color(colorValue.Value[0], colorValue.Value[1], colorValue.Value[2], colorValue.Value[3]);
                                         editClip.AnimatesColor(mpr, qualifiedName).WithOneFrame(rgbaColor);
                                         break;
-                                    case MaterialValue.VectorXyzw xyzwValue:
+                                    case MaterialValue.ColorHdr colorHdrValue:
                                         // HDR Color will convert into just xyzw
-                                        var xyzwColor = new Color(xyzwValue.Value[0], xyzwValue.Value[1], xyzwValue.Value[2], xyzwValue.Value[3]);
+                                        var xyzwColor = new Color(colorHdrValue.Value[0], colorHdrValue.Value[1], colorHdrValue.Value[2], colorHdrValue.Value[3]);
                                         editClip.AnimatesHDRColor(mpr, qualifiedName).WithOneFrame(xyzwColor);
                                         break;
                                     default:
@@ -397,17 +397,17 @@ namespace KusakaFactory.Declavatar.Processor
                             var qualifiedName = $"material.{points[0].Target.Property}";
                             switch (points[0].Target.Value)
                             {
-                                case MaterialValue.Float floatValue:
+                                case MaterialValue.Float:
                                     var floatPoints = points.Select((p) => (p.Time, (p.Target.Value as MaterialValue.Float).Value));
                                     e.Animates(mr, qualifiedName).WithFrameCountUnit((kfs) =>
                                     {
                                         foreach (var point in floatPoints) kfs.Linear(point.Time * 100.0f, point.Value);
                                     });
                                     break;
-                                case MaterialValue.VectorRgba rgbaValue:
+                                case MaterialValue.Color:
                                     var rgbaPoints = points.Select((p) =>
                                     {
-                                        var castValue = (p.Target.Value as MaterialValue.VectorRgba).Value;
+                                        var castValue = (p.Target.Value as MaterialValue.Color).Value;
                                         return (p.Time, Value: new Color(castValue[0], castValue[1], castValue[2], castValue[3]));
                                     });
                                     e.AnimatesColor(mr, qualifiedName).WithKeyframes(AacFlUnit.Frames, (kfs) =>
@@ -415,17 +415,27 @@ namespace KusakaFactory.Declavatar.Processor
                                         foreach (var point in rgbaPoints) kfs.Linear(point.Time * 100.0f, point.Value);
                                     });
                                     break;
-                                case MaterialValue.VectorXyzw xyzwValue:
-                                    // HDR Color will convert into just xyzw
-                                    var xyzwPoints = points.Select((p) =>
+                                case MaterialValue.ColorHdr:
+                                    var rgbaHdrPoints = points.Select((p) =>
                                     {
-                                        var castValue = (p.Target.Value as MaterialValue.VectorXyzw).Value;
+                                        var castValue = (p.Target.Value as MaterialValue.ColorHdr).Value;
                                         return (p.Time, Value: new Color(castValue[0], castValue[1], castValue[2], castValue[3]));
                                     });
                                     e.AnimatesColor(mr, qualifiedName).WithKeyframes(AacFlUnit.Frames, (kfs) =>
                                     {
-                                        foreach (var point in xyzwPoints) kfs.Linear(point.Time * 100.0f, point.Value);
+                                        foreach (var point in rgbaHdrPoints) kfs.Linear(point.Time * 100.0f, point.Value);
                                     });
+                                    break;
+                                case MaterialValue.Vector:
+                                    var subpaths = new string[] { "x", "y", "z", "w" };
+                                    var xyzwPoints = points.Select((p) => (p.Time, (p.Target.Value as MaterialValue.Vector).Value));
+                                    foreach (var (p, i) in subpaths.Select((p, i) => (p, i)))
+                                    {
+                                        e.Animates(mr, $"{qualifiedName}.{p}").WithFrameCountUnit((kfs) =>
+                                        {
+                                            foreach (var point in xyzwPoints) kfs.Linear(point.Time * 100.0f, point.Value[i]);
+                                        });
+                                    }
                                     break;
                                 default:
                                     context.ReportInternalError("runtime.internal.invalid_target");

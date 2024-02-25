@@ -218,12 +218,17 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             public float Value { get; set; }
         }
 
-        public sealed class VectorRgba : MaterialValue
+        public sealed class Color : MaterialValue
         {
             public float[] Value { get; set; }
         }
 
-        public sealed class VectorXyzw : MaterialValue
+        public sealed class ColorHdr : MaterialValue
+        {
+            public float[] Value { get; set; }
+        }
+
+        public sealed class Vector : MaterialValue
         {
             public float[] Value { get; set; }
         }
@@ -475,8 +480,9 @@ namespace KusakaFactory.Declavatar.Runtime.Data
                 switch (type)
                 {
                     case "Float": return new MaterialValue.Float { Value = content.Value<float>() };
-                    case "VectorRgba": return new MaterialValue.VectorRgba { Value = content.Values<float>().ToArray() };
-                    case "VectorXyzw": return new MaterialValue.VectorXyzw { Value = content.Values<float>().ToArray() };
+                    case "Color": return new MaterialValue.Color { Value = content.Values<float>().ToArray() };
+                    case "ColorHdr": return new MaterialValue.ColorHdr { Value = content.Values<float>().ToArray() };
+                    case "Vector": return new MaterialValue.Vector { Value = content.Values<float>().ToArray() };
                     default: throw new JsonException("invalid material value");
                 }
             }

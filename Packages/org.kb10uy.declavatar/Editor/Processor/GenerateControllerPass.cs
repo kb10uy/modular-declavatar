@@ -305,6 +305,31 @@ namespace KusakaFactory.Declavatar.Processor
                             var targetMaterial = context.GetExternalMaterial(material.AssetKey);
                             inlineClip.SwappingMaterial(mr, (int)material.Slot, targetMaterial);
                             break;
+                        case Target.MaterialProperty materialProp:
+                            var mpr = context.FindRenderer(materialProp.Mesh);
+                            inlineClip.Animating((editClip) =>
+                            {
+                                var qualifiedName = $"material.{materialProp.Property}";
+                                switch (materialProp.Value)
+                                {
+                                    case MaterialValue.Float floatValue:
+                                        editClip.Animates(mpr, qualifiedName).WithOneFrame(floatValue.Value);
+                                        break;
+                                    case MaterialValue.VectorRgba rgbaValue:
+                                        var rgbaColor = new Color(rgbaValue.Value[0], rgbaValue.Value[1], rgbaValue.Value[2], rgbaValue.Value[3]);
+                                        editClip.AnimatesColor(mpr, qualifiedName).WithOneFrame(rgbaColor);
+                                        break;
+                                    case MaterialValue.VectorXyzw xyzwValue:
+                                        // HDR Color will convert into just xyzw
+                                        var xyzwColor = new Color(xyzwValue.Value[0], xyzwValue.Value[1], xyzwValue.Value[2], xyzwValue.Value[3]);
+                                        editClip.AnimatesHDRColor(mpr, qualifiedName).WithOneFrame(xyzwColor);
+                                        break;
+                                    default:
+                                        context.ReportInternalError("runtime.internal.invalid_target");
+                                        break;
+                                }
+                            });
+                            break;
                         case Target.Drive _:
                         case Target.Tracking _:
                             continue;
@@ -324,7 +349,7 @@ namespace KusakaFactory.Declavatar.Processor
         private AacFlClip CreateKeyedInlineClip(DeclavatarContext context, LayerAnimation.KeyedInline keyedInline)
         {
             var groups = keyedInline.Keyframes
-                .SelectMany((kf) => kf.Targets.Select((t) => (kf.Value, Target: t)))
+                .SelectMany((kf) => kf.Targets.Select((t) => (Time: kf.Value, Target: t)))
                 .GroupBy((p) => p.Target.AsGroupingKey());
             var keyedInlineClip = _currentAac.NewClip().NonLooping();
             keyedInlineClip.Animating((e) =>
@@ -335,35 +360,77 @@ namespace KusakaFactory.Declavatar.Processor
                     {
                         if (group.Key.StartsWith("shape://"))
                         {
-                            var points = group.Select((p) => (p.Value, Target: p.Target as Target.Shape)).ToList();
+                            var points = group.Select((p) => (p.Time, Target: p.Target as Target.Shape)).ToList();
                             var smr = context.FindSkinnedMeshRenderer(points[0].Target.Mesh);
                             e.Animates(smr, $"blendShape.{points[0].Target.Name}").WithFrameCountUnit((kfs) =>
                             {
-                                foreach (var point in points) kfs.Linear(point.Value * 100.0f, point.Target.Value * 100.0f);
+                                foreach (var point in points) kfs.Linear(point.Time * 100.0f, point.Target.Value * 100.0f);
                             });
                         }
                         else if (group.Key.StartsWith("object://"))
                         {
-                            var points = group.Select((p) => (p.Value, Target: p.Target as Target.Object)).ToList();
+                            var points = group.Select((p) => (p.Time, Target: p.Target as Target.Object)).ToList();
                             var go = context.FindGameObject(points[0].Target.Name);
                             e.Animates(go).WithFrameCountUnit((kfs) =>
                             {
-                                foreach (var point in points) kfs.Constant(point.Value * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
+                                foreach (var point in points) kfs.Constant(point.Time * 100.0f, point.Target.Enabled ? 1.0f : 0.0f);
                             });
                         }
                         else if (group.Key.StartsWith("material://"))
                         {
                             // Use traditional API for matarial swapping
-                            var points = group.Select((p) => (p.Value, Target: p.Target as Target.Material)).ToList();
+                            var points = group.Select((p) => (p.Time, Target: p.Target as Target.Material)).ToList();
                             var mr = context.FindRenderer(points[0].Target.Mesh);
 
                             var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
                             var keyframes = points.Select((p) => new ObjectReferenceKeyframe
                             {
-                                time = p.Value * 100.0f,
+                                time = p.Time * 100.0f,
                                 value = context.GetExternalMaterial(p.Target.AssetKey),
                             }).ToArray();
                             AnimationUtility.SetObjectReferenceCurve(keyedInlineClip.Clip, binding, keyframes);
+                        }
+                        else if (group.Key.StartsWith("material+prop://"))
+                        {
+                            var points = group.Select((p) => (p.Time, Target: p.Target as Target.MaterialProperty)).ToList();
+                            var mr = context.FindRenderer(points[0].Target.Mesh);
+                            var qualifiedName = $"material.{points[0].Target.Property}";
+                            switch (points[0].Target.Value)
+                            {
+                                case MaterialValue.Float floatValue:
+                                    var floatPoints = points.Select((p) => (p.Time, (p.Target.Value as MaterialValue.Float).Value));
+                                    e.Animates(mr, qualifiedName).WithFrameCountUnit((kfs) =>
+                                    {
+                                        foreach (var point in floatPoints) kfs.Linear(point.Time * 100.0f, point.Value);
+                                    });
+                                    break;
+                                case MaterialValue.VectorRgba rgbaValue:
+                                    var rgbaPoints = points.Select((p) =>
+                                    {
+                                        var castValue = (p.Target.Value as MaterialValue.VectorRgba).Value;
+                                        return (p.Time, Value: new Color(castValue[0], castValue[1], castValue[2], castValue[3]));
+                                    });
+                                    e.AnimatesColor(mr, qualifiedName).WithKeyframes(AacFlUnit.Frames, (kfs) =>
+                                    {
+                                        foreach (var point in rgbaPoints) kfs.Linear(point.Time * 100.0f, point.Value);
+                                    });
+                                    break;
+                                case MaterialValue.VectorXyzw xyzwValue:
+                                    // HDR Color will convert into just xyzw
+                                    var xyzwPoints = points.Select((p) =>
+                                    {
+                                        var castValue = (p.Target.Value as MaterialValue.VectorXyzw).Value;
+                                        return (p.Time, Value: new Color(castValue[0], castValue[1], castValue[2], castValue[3]));
+                                    });
+                                    e.AnimatesColor(mr, qualifiedName).WithKeyframes(AacFlUnit.Frames, (kfs) =>
+                                    {
+                                        foreach (var point in xyzwPoints) kfs.Linear(point.Time * 100.0f, point.Value);
+                                    });
+                                    break;
+                                default:
+                                    context.ReportInternalError("runtime.internal.invalid_target");
+                                    break;
+                            }
                         }
                     }
                     catch (DeclavatarRuntimeException)

@@ -192,6 +192,13 @@ namespace KusakaFactory.Declavatar.Runtime.Data
             public string AssetKey { get; set; }
         }
 
+        public sealed class MaterialProperty : Target
+        {
+            public string Mesh { get; set; }
+            public string Property { get; set; }
+            public MaterialValue Value { get; set; }
+        }
+
         public sealed class Drive : Target
         {
             public ParameterDrive ParameterDrive { get; set; }
@@ -200,6 +207,25 @@ namespace KusakaFactory.Declavatar.Runtime.Data
         public sealed class Tracking : Target
         {
             public TrackingControl Control { get; set; }
+        }
+    }
+
+    [JsonConverter(typeof(Converters.MaterialValueConverter))]
+    public abstract class MaterialValue
+    {
+        public sealed class Float : MaterialValue
+        {
+            public float Value { get; set; }
+        }
+
+        public sealed class VectorRgba : MaterialValue
+        {
+            public float[] Value { get; set; }
+        }
+
+        public sealed class VectorXyzw : MaterialValue
+        {
+            public float[] Value { get; set; }
         }
     }
 
@@ -416,6 +442,7 @@ namespace KusakaFactory.Declavatar.Runtime.Data
                     case "Shape": return new Target.Shape { Mesh = content["mesh"].Value<string>(), Name = content["shape"].Value<string>(), Value = content["value"].Value<float>(), };
                     case "Object": return new Target.Object { Name = content["object"].Value<string>(), Enabled = content["value"].Value<bool>() };
                     case "Material": return new Target.Material { Mesh = content["mesh"].Value<string>(), Slot = content["index"].Value<uint>(), AssetKey = content["asset"].Value<string>() };
+                    case "MaterialProperty": return new Target.MaterialProperty { Mesh = content["mesh"].Value<string>(), Property = content["property"].Value<string>(), Value = content["value"].ToObject<MaterialValue>() };
                     case "ParameterDrive": return new Target.Drive { ParameterDrive = content.ToObject<ParameterDrive>(serializer) };
                     case "TrackingControl": return new Target.Tracking { Control = content.ToObject<TrackingControl>(serializer) };
                     default: throw new JsonException("invalid driver type");
@@ -427,6 +454,37 @@ namespace KusakaFactory.Declavatar.Runtime.Data
                 throw new NotImplementedException();
             }
         }
+
+        internal sealed class MaterialValueConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(MaterialValue);
+            }
+
+            public override object ReadJson(
+                JsonReader reader,
+                Type objectType,
+                object existingValue,
+                JsonSerializer serializer
+            )
+            {
+                var obj = JObject.Load(reader);
+                var type = obj["type"].Value<string>();
+                var content = obj["content"];
+                switch (type)
+                {
+                    case "Float": return new MaterialValue.Float { Value = content.Value<float>() };
+                    case "VectorRgba": return new MaterialValue.VectorRgba { Value = content.Values<float>().ToArray() };
+                    case "VectorXyzw": return new MaterialValue.VectorXyzw { Value = content.Values<float>().ToArray() };
+                    default: throw new JsonException("invalid material value");
+                }
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }
-

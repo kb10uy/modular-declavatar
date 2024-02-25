@@ -15,6 +15,7 @@ namespace KusakaFactory.Declavatar
                 case Target.Shape s: return $"shape://{s.Mesh}/{s.Name}";
                 case Target.Object o: return $"object://{o.Name}";
                 case Target.Material m: return $"material://{m.Mesh}/{m.Slot}";
+                case Target.MaterialProperty mp: return $"material+prop://{mp.Mesh}/{mp.Property}";
                 default: throw new ArgumentException("invalid target type");
             }
         }

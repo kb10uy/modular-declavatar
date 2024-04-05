@@ -5,9 +5,9 @@ namespace KusakaFactory.Declavatar.Processor
 {
     internal sealed class ExecuteArbittachPass : IDeclavatarPass
     {
-        private readonly Dictionary<string, IErasedProcessor> _attachmentDefinitions;
+        private readonly IReadOnlyDictionary<string, IErasedProcessor> _attachmentDefinitions;
 
-        internal ExecuteArbittachPass(Dictionary<string, IErasedProcessor> attachmentDefinitions)
+        internal ExecuteArbittachPass(IReadOnlyDictionary<string, IErasedProcessor> attachmentDefinitions)
         {
             _attachmentDefinitions = attachmentDefinitions;
         }

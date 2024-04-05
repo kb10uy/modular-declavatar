@@ -1,18 +1,14 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.localization;
 using KusakaFactory.Declavatar;
-using KusakaFactory.Declavatar.Arbittach;
 using KusakaFactory.Declavatar.Processor;
 using KusakaFactory.Declavatar.Runtime;
-using Avatar = KusakaFactory.Declavatar.Runtime.Data.Avatar;
 
 [assembly: ExportsPlugin(typeof(DeclavatarNdmfPlugin))]
 namespace KusakaFactory.Declavatar
@@ -22,22 +18,17 @@ namespace KusakaFactory.Declavatar
         public override string DisplayName => "Declavatar";
         public override string QualifiedName => "org.kb10uy.declavatar";
 
-        private JsonSerializerSettings _serializerSettings;
         private Localizer _localizer;
-        private List<string> _libraryPaths;
-        private Dictionary<string, IErasedProcessor> _processors;
+        private DeclavatarCompileService _compileService;
         private IDeclavatarPass[] _passes;
 
         protected override void Configure()
         {
-            var contractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() };
-            _serializerSettings = new JsonSerializerSettings { ContractResolver = contractResolver };
             _localizer = DeclavatarLocalizer.ConstructLocalizer();
-
-            PrepareDeclavatarCommon();
+            _compileService = DeclavatarCompileService.Create();
             _passes = new IDeclavatarPass[]
             {
-                new ExecuteArbittachPass(_processors),
+                new ExecuteArbittachPass(_compileService.ArbittachProcessors),
                 new GenerateControllerPass(),
                 new GenerateParameterPass(),
                 new GenerateMenuPass(),
@@ -46,41 +37,6 @@ namespace KusakaFactory.Declavatar
             InPhase(BuildPhase.Resolving).Run("Compile declaration files", PrepareDeclarations);
             InPhase(BuildPhase.Generating).Run("Process declaration elements", ProcessDeclarations);
             InPhase(BuildPhase.Transforming).Run("Remove declavatar components", RemoveComponents);
-        }
-
-        private void PrepareDeclavatarCommon()
-        {
-            _libraryPaths = Configuration.LoadEditorUserSettings().EnumerateAbsoluteLibraryPaths().ToList();
-
-            _processors = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany((asm) => asm.GetCustomAttributes<ExportsProcessorAttribute>())
-                .Select((attr) => (attr.ProcessorType, attr.Name, AttachmentType: ScanArbittachProcessorType(attr.ProcessorType)))
-                .Where((p) => p.AttachmentType != null)
-                .Select((p) =>
-                {
-                    var constructor = p.ProcessorType.GetConstructor(new Type[] { });
-                    var erasedProcessor = constructor.Invoke(new object[] { }) as IErasedProcessor;
-                    var definition = AttachmentDefinition.Create(p.AttachmentType, p.Name);
-                    erasedProcessor.Configure(definition);
-                    return erasedProcessor;
-                })
-                .ToDictionary((ep) => ep.Definition.RegisteredName);
-        }
-
-        private static Type ScanArbittachProcessorType(Type type)
-        {
-            var checkingType = type;
-            while (true)
-            {
-                checkingType = checkingType.BaseType;
-                if (checkingType == null) return null;
-
-                if (!checkingType.IsGenericType) continue;
-                var genericDefinition = checkingType.GetGenericTypeDefinition();
-                if (!genericDefinition.IsAssignableFrom(typeof(ArbittachProcessor<,>))) continue;
-
-                return checkingType.GenericTypeArguments[1];
-            }
         }
 
         #region Compile declavatar files
@@ -99,7 +55,7 @@ namespace KusakaFactory.Declavatar
 
                 var externalAssets = AggregateErasedExternalAssets(component.ExternalAssets);
                 var symbols = component.Symbols.ToHashSet();
-                var (declaration, logs) = CompileDeclaration(
+                var (declaration, logs) = _compileService.CompileDeclaration(
                     component.Definition.text,
                     (DeclavatarFormat)component.Format,
                     symbols,
@@ -117,43 +73,6 @@ namespace KusakaFactory.Declavatar
             }
 
             foreach (var component in declavatarComponents) UnityEngine.Object.DestroyImmediate(component);
-        }
-
-        private (Avatar, List<SerializedLog>) CompileDeclaration(string source, DeclavatarFormat format, HashSet<string> symbols, Dictionary<string, string> localizations)
-        {
-            string avatarJson;
-            List<string> logJsons;
-            unsafe
-            {
-                void* declavatar = null;
-                void* compiled = null;
-                try
-                {
-                    declavatar = DeclavatarCore.Create();
-                    foreach (var path in _libraryPaths) DeclavatarCore.AddLibraryPath(declavatar, path);
-                    foreach (var processor in _processors.Values)
-                    {
-                        var schemaJson = JsonConvert.SerializeObject(processor.Definition.Schema, _serializerSettings);
-                        DeclavatarCore.RegisterArbittach(declavatar, schemaJson);
-                    }
-
-                    foreach (var symbol in symbols) DeclavatarCore.DefineSymbol(declavatar, symbol);
-                    foreach (var (key, value) in localizations) DeclavatarCore.DefineLocalization(declavatar, key, value);
-
-                    compiled = DeclavatarCore.Compile(declavatar, source, format);
-                    logJsons = DeclavatarCore.GetLogJsons(compiled);
-                    avatarJson = DeclavatarCore.GetAvatarJson(compiled);
-                }
-                finally
-                {
-                    DeclavatarCore.DestroyCompiledState(compiled);
-                    DeclavatarCore.Destroy(declavatar);
-                }
-            }
-
-            var definition = avatarJson != null ? JsonConvert.DeserializeObject<Avatar>(avatarJson, _serializerSettings) : null;
-            var logs = logJsons.Select((lj) => JsonConvert.DeserializeObject<SerializedLog>(lj, _serializerSettings)).ToList();
-            return (definition, logs);
         }
 
         private Dictionary<string, (string, UnityEngine.Object)> AggregateErasedExternalAssets(DeclavatarExternalAssets[] externalAssets)

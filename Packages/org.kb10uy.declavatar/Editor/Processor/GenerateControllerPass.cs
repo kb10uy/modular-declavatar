@@ -285,6 +285,8 @@ namespace KusakaFactory.Declavatar.Processor
 
         private AacFlClip CreateInlineClip(DeclavatarContext context, LayerAnimation.Inline inline)
         {
+            if (inline.Targets.Count == 0) return _currentAac.DummyClipLasting(1.0f, AacFlUnit.Seconds);
+
             var inlineClip = _currentAac.NewClip();
             foreach (var target in inline.Targets)
             {
@@ -348,6 +350,8 @@ namespace KusakaFactory.Declavatar.Processor
 
         private AacFlClip CreateKeyedInlineClip(DeclavatarContext context, LayerAnimation.KeyedInline keyedInline)
         {
+            if (keyedInline.Keyframes.Count == 0) return _currentAac.DummyClipLasting(1.0f, AacFlUnit.Seconds);
+
             var groups = keyedInline.Keyframes
                 .SelectMany((kf) => kf.Targets.Select((t) => (Time: kf.Value, Target: t)))
                 .GroupBy((p) => p.Target.AsGroupingKey());

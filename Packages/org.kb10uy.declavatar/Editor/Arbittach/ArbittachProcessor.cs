@@ -1,5 +1,3 @@
-using nadena.dev.ndmf;
-
 namespace KusakaFactory.Declavatar.Arbittach
 {
     /// <summary>

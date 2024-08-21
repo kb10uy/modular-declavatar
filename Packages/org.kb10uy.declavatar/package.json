@@ -1,7 +1,7 @@
 {
   "name": "org.kb10uy.declavatar",
   "displayName": "Declavatar",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "unity": "2022.3",
   "description": "Declarative Avatar Asset Composing Tool",
   "documentationUrl": "https://declavatar.kb10uy.dev",
@@ -14,10 +14,11 @@
     "url": "https://kb10uy.org"
   },
   "vpmDependencies": {
+    "com.vrchat.avatars" : ">=3.7.0",
     "nadena.dev.ndmf": ">=1.4.0",
     "nadena.dev.modular-avatar": ">=1.9.10",
-    "dev.hai-vr.animator-as-code.v1": ">=1.0.9920",
-    "dev.hai-vr.animator-as-code.v1.vrchat": ">=1.0.9920"
+    "dev.hai-vr.animator-as-code.v1": ">=1.1.0",
+    "dev.hai-vr.animator-as-code.v1.vrchat": ">=1.1.0"
   },
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "2.0.0"

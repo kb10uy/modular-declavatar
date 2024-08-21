@@ -101,7 +101,7 @@ namespace KusakaFactory.Declavatar.Processor
             var layer = controller.NewLayer(name);
             var layerParameter = layer.FloatParameter(puppet.Parameter);
 
-            var state = layer.NewState(name).MotionTime(layerParameter);
+            var state = layer.NewState(name).WithMotionTime(layerParameter);
             WriteStateAnimation(context, layer, state, puppet.Animation);
         }
 
@@ -141,7 +141,7 @@ namespace KusakaFactory.Declavatar.Processor
                         if (clip.TimeBy != null)
                         {
                             var timeParameter = layer.FloatParameter(clip.TimeBy);
-                            state.MotionTime(timeParameter);
+                            state.WithMotionTime(timeParameter);
                         }
                         break;
                     case RawAnimation.BlendTree blendTree:
@@ -414,7 +414,7 @@ namespace KusakaFactory.Declavatar.Processor
                                         var castValue = (p.Target.Value as MaterialValue.Color).Value;
                                         return (p.Time, Value: new Color(castValue[0], castValue[1], castValue[2], castValue[3]));
                                     });
-                                    e.AnimatesColor(mr, qualifiedName).WithKeyframes(AacFlUnit.Frames, (kfs) =>
+                                    e.AnimatesColor(mr, qualifiedName).WithUnit(AacFlUnit.Frames, (kfs) =>
                                     {
                                         foreach (var point in rgbaPoints) kfs.Linear(point.Time * 100.0f, point.Value);
                                     });
@@ -425,7 +425,7 @@ namespace KusakaFactory.Declavatar.Processor
                                         var castValue = (p.Target.Value as MaterialValue.ColorHdr).Value;
                                         return (p.Time, Value: new Color(castValue[0], castValue[1], castValue[2], castValue[3]));
                                     });
-                                    e.AnimatesColor(mr, qualifiedName).WithKeyframes(AacFlUnit.Frames, (kfs) =>
+                                    e.AnimatesColor(mr, qualifiedName).WithUnit(AacFlUnit.Frames, (kfs) =>
                                     {
                                         foreach (var point in rgbaHdrPoints) kfs.Linear(point.Time * 100.0f, point.Value);
                                     });

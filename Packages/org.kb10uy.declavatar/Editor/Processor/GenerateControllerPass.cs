@@ -62,6 +62,9 @@ namespace KusakaFactory.Declavatar.Processor
             mergeAnimator.animator = fxAnimator.AnimatorController;
             mergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
             mergeAnimator.pathMode = MergeAnimatorPathMode.Relative;
+            mergeAnimator.deleteAttachedAnimator = false;
+            mergeAnimator.layerPriority = 0;
+            mergeAnimator.matchAvatarWriteDefaults = true;
         }
 
         private void GenerateGroupLayer(DeclavatarContext context, AacFlController controller, string name, Layer.GroupLayer g)

@@ -3,7 +3,7 @@ using nadena.dev.modular_avatar.core;
 
 namespace KusakaFactory.Declavatar.Processor
 {
-    internal sealed class GenerateMenuPass : IDeclavatarPass
+    internal sealed class GenerateParameterPass : IDeclavatarPass
     {
         public void Execute(DeclavatarContext context)
         {

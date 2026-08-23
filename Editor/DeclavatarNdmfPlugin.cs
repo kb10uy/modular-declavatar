@@ -30,8 +30,8 @@ namespace KusakaFactory.Declavatar
             {
                 new ExecuteArbittachPass(_compileService.ArbittachProcessors),
                 new GenerateControllerPass(),
-                new GenerateParameterPass(),
                 new GenerateMenuPass(),
+                new GenerateParameterPass(),
             };
 
             InPhase(BuildPhase.Resolving).Run("Compile declaration files", PrepareDeclarations);

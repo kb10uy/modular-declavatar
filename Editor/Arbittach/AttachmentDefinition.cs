@@ -106,7 +106,7 @@ namespace KusakaFactory.Declavatar.Arbittach
                 {
                     // parameter access
                     var parameterIndex = Convert.ToInt32(bindPath.Indexer);
-                    if (targetSchemaProperty.Parameters.Count < parameterIndex)
+                    if (targetSchemaProperty.Parameters.Count <= parameterIndex)
                     {
                         throw new IndexOutOfRangeException($"property {bindPath.Property} has {targetSchemaProperty.Parameters.Count} arguments");
                     }
@@ -213,7 +213,7 @@ namespace KusakaFactory.Declavatar.Arbittach
                 {
                     // parameter access
                     var parameterIndex = Convert.ToInt32(bindPath.Indexer);
-                    if (targetRawProperty.Parameters.Count < parameterIndex)
+                    if (targetRawProperty.Parameters.Count <= parameterIndex)
                     {
                         throw new IndexOutOfRangeException($"property {bindPath.Property} has {targetRawProperty.Parameters.Count} arguments");
                     }

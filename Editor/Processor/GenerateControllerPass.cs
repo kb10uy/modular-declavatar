@@ -138,6 +138,10 @@ namespace KusakaFactory.Declavatar.Processor
                         WriteStateAnimation(context, layer, state, clip.Animation);
                         if (clip.Speed != null)
                         {
+                            state.WithSpeedSetTo(clip.Speed.Value);
+                        }
+                        if (clip.SpeedBy != null)
+                        {
                             var speedParameter = layer.FloatParameter(clip.SpeedBy);
                             state.WithSpeed(speedParameter);
                         }
@@ -200,6 +204,8 @@ namespace KusakaFactory.Declavatar.Processor
                         break;
                 }
             }
+
+            if (rawLayer.DefaultIndex < states.Count) layer.WithDefaultState(states[(int)rawLayer.DefaultIndex]);
 
             // Set transitions
             foreach (var transition in rawLayer.Transitions)
@@ -392,7 +398,7 @@ namespace KusakaFactory.Declavatar.Processor
                             var binding = e.BindingFromComponent(mr, $"m_Materials.Array.data[{points[0].Target.Slot}]");
                             var keyframes = points.Select((p) => new ObjectReferenceKeyframe
                             {
-                                time = p.Time * 100.0f,
+                                time = p.Time * 100.0f / 60.0f,
                                 value = context.GetExternalMaterial(p.Target.AssetKey),
                             }).ToArray();
                             AnimationUtility.SetObjectReferenceCurve(keyedInlineClip.Clip, binding, keyframes);
@@ -467,6 +473,7 @@ namespace KusakaFactory.Declavatar.Processor
                     case Target.Shape _:
                     case Target.Object _:
                     case Target.Material _:
+                    case Target.MaterialProperty _:
                         continue;
                     case Target.Drive drive:
                         AppendStateParameterDrive(layer, state, drive.ParameterDrive);
